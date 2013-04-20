@@ -32,7 +32,34 @@ for bwThresh = [.1, .2, .4, .8]
     edges = edges | edgesCurrent;
 end
 
+%% Hough Transform
+% * Every pixel in the image corresponds to a circle in the hough plane.
+% Each pixel in a hough-plane circle is a 'vote' for that pixel as a
+% circle-center in the original image.
+% * The hough plane accumulates these votes into bins.
+% * Bins with high values correspond to circle-centers in the image plane.
+
+q = 0.25; % Quantization factor
+%Initialize Hough Plane, which is madeup of bins that accumulate the 'votes'.
+houghPlane = zeros(q * size(edges,1), q * size(edges,2));
+% Create index-matrices for all indexes in the hough plane.
+[hX, hY] = meshgrid(1:size(houghPlane,1), 1:size(houghPlane,2));
+% Find nonzero pixels in the image.
+[imX, imY] = find(edges);
+n = length(imX);
+
+fprintf(1,'\n Progress =      ');
+
+for i=1:n
+    fprintf(1,'\b\b\b\b\b%5.1f',(i/n) * 100);
+    
+    dist = round( sqrt( (hX - q * imX(i)).^2 + (hY - q * imY(i)).^2 ) );
+    circle = dist == radius;
+    houghPlane = houghPlane + circle;
+end
+
 %% DEBUG
 figure; imshow(edges);
+figure; imagesc(houghPlane);
 end
 
