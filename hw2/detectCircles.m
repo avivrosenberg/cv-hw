@@ -10,6 +10,13 @@ function [ centers ] = detectCircles( im, radius, usegradient )
 % * usegradient - whether or nor to use gradient direction on circle edges.
 % 
 
+%% Paramters Parsing
+p = inputParser;
+addRequired(p,'im', @(x) ~isrow(x) && ~iscolumn(x) && ~isscalar(x));
+addRequired(p,'radius', @isscalar);
+addOptional(p,'usegradient', true, @islogical);
+parse(p, im, radius, usegradient);
+
 %% Convert image to grayscale.
 im = rgb2gray(im);
 
