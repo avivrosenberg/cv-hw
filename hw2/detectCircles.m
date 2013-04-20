@@ -1,6 +1,6 @@
 %% Detect Circles
 
-function [ centers ] = detectCircles( im, radius, usegradient )
+function [ centers ] = detectCircles( im, radius, usegradient, varargin )
 %%
 %  Returns locations of circles with a given radius in an image.
 %  Parameters:
@@ -15,7 +15,9 @@ p = inputParser;
 addRequired(p,'im', @(x) ~isrow(x) && ~iscolumn(x) && ~isscalar(x));
 addRequired(p,'radius', @isscalar);
 addOptional(p,'usegradient', true, @islogical);
-parse(p, im, radius, usegradient);
+addOptional(p,'quantization',0.25,@isscalar);
+addOptional(p,'hough_thresh',0.75,@isscalar);
+parse(p, im, radius, usegradient, varargin{:});
 
 %% Convert image to grayscale.
 im = rgb2gray(im);
@@ -39,7 +41,7 @@ end
 % * The hough plane accumulates these votes into bins.
 % * Bins with high values correspond to circle-centers in the image plane.
 
-q = 0.25; % Quantization factor
+q = p.Results.quantization; % Quantization factor
 %Initialize Hough Plane, which is madeup of bins that accumulate the 'votes'.
 houghPlane = zeros(ceil(q * size(edges,1)), ceil(q * size(edges,2)));
 r = round(q * radius);
@@ -66,7 +68,7 @@ end
 % image plane.
 % These indices are where circles exists in the image.
 
-t = 0.75; % Threshold percent for number of votes needed for a circle
+t = p.Results.hough_thresh; % Threshold percent for number of votes needed for a circle
 
 [cX, cY] = find(houghPlane >= t * max(max(houghPlane)));
 cX = cX ./ q; cY = cY ./ q;
