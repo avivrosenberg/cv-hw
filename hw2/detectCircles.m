@@ -61,8 +61,19 @@ for i=1:n
     houghPlane = houghPlane + circle;
 end
 
+%% Find Circles
+% Take maximal points in the Hough plane, and compute their index in the
+% image plane.
+% These indices are where circles exists in the image.
+
+t = 0.75; % Threshold percent for number of votes needed for a circle
+
+[cX, cY] = find(houghPlane >= t * max(max(houghPlane)));
+cX = cX ./ q; cY = cY ./ q;
+centers(:,1) = cX; centers(:,2) = cY;
 %% DEBUG
 figure; imshow(edges);
 figure; imagesc(houghPlane);
+figure; imshow(im); hold on; plot(cY, cX, 'r+', 'MarkerSize', 10); plot(cY, cX, 'ro', 'MarkerSize', 2*radius);
 end
 
