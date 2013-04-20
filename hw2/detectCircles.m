@@ -41,20 +41,23 @@ end
 
 q = 0.25; % Quantization factor
 %Initialize Hough Plane, which is madeup of bins that accumulate the 'votes'.
-houghPlane = zeros(q * size(edges,1), q * size(edges,2));
+houghPlane = zeros(ceil(q * size(edges,1)), ceil(q * size(edges,2)));
+r = round(q * radius);
+
 % Create index-matrices for all indexes in the hough plane.
 [hX, hY] = meshgrid(1:size(houghPlane,1), 1:size(houghPlane,2));
+hX = hX'; hY = hY';
+
 % Find nonzero pixels in the image.
 [imX, imY] = find(edges);
 n = length(imX);
 
 fprintf(1,'\n Progress =      ');
-
 for i=1:n
     fprintf(1,'\b\b\b\b\b%5.1f',(i/n) * 100);
     
     dist = round( sqrt( (hX - q * imX(i)).^2 + (hY - q * imY(i)).^2 ) );
-    circle = dist == radius;
+    circle = dist == r;
     houghPlane = houghPlane + circle;
 end
 
