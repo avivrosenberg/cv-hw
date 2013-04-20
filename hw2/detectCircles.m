@@ -1,11 +1,25 @@
+%% Detect Circles
+
 function [ centers ] = detectCircles( im, radius, usegradient )
-%DETECTCIRCLES Returns locations of circles with a given radius in an image
-%   Detailed explanation goes here
+%%
+%  Returns locations of circles with a given radius in an image.
+%  Parameters:
+% 
+% * im - input image
+% * radius - circle radius to look for
+% * usegradient - whether or nor to use gradient direction on circle edges.
+% 
 
+%% Convert image to grayscale.
 im = rgb2gray(im);
-diskFilter3 = fspecial('disk', 3);
 
+
+%% Create a smooth BW image of the edges:
+% * Convert image to BW with a variying threshold, and smooth it with a filter.
+% * Get edges using 'canny' method with high thresholds (since it's a BW image)
+% * Accumulate edges.
 edges = false(size(im));
+diskFilter3 = fspecial('disk', 3);
 for bwThresh = [.1, .2, .4, .8]
     bwCurrent = im2bw(im, bwThresh);
     bwCurrent = imfilter(bwCurrent, diskFilter3);
@@ -14,6 +28,8 @@ for bwThresh = [.1, .2, .4, .8]
     edges = edges | edgesCurrent;
 end
 
+%% DEBUG
 imshow(edges);
 figure; imshow(edge(edges));
 end
+
