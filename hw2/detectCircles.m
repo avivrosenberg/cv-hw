@@ -44,7 +44,7 @@ end
 q = parser.Results.quantization; % Quantization factor
 %Initialize Hough Plane, which is madeup of bins that accumulate the 'votes'.
 houghPlane = zeros(ceil(q * size(edges,1)), ceil(q * size(edges,2)));
-r = round(q * radius);
+houghRadius = round(q * radius);
 
 % Create index-matrices for all indexes in the hough plane.
 [hX, hY] = meshgrid(1:size(houghPlane,1), 1:size(houghPlane,2));
@@ -54,12 +54,12 @@ hX = hX'; hY = hY';
 [imX, imY] = find(edges);
 n = length(imX);
 
-fprintf(1,'\n Progress =      ');
+ticId = tic; fprintf(1,' Progress =      ');
 for i=1:n
     fprintf(1,'\b\b\b\b\b%5.1f',(i/n) * 100);
     
     dist = round( sqrt( (hX - q * imX(i)).^2 + (hY - q * imY(i)).^2 ) );
-    circle = dist == r;
+    circle = dist == houghRadius;
     houghPlane = houghPlane + circle;
 end
 
@@ -73,6 +73,8 @@ t = parser.Results.hough_thresh; % Threshold percent for number of votes needed 
 [cX, cY] = find(houghPlane >= t * max(max(houghPlane)));
 cX = cX ./ q; cY = cY ./ q;
 centers(:,1) = cX; centers(:,2) = cY;
+
+fprintf(1,'\n Done. Elapsed: %.5f [sec]\n', toc(ticId));
 %% DEBUG
 figure; imshow(edges);
 figure; imagesc(houghPlane);
