@@ -1,6 +1,6 @@
 %% Detect Circles
 
-function [ centers ] = detectCircles( im, radius, usegradient, varargin )
+function [ centers ] = detectCircles( im, radius, varargin )
 %%
 %  Returns locations of circles with a given radius in an image.
 %  Parameters:
@@ -12,12 +12,14 @@ function [ centers ] = detectCircles( im, radius, usegradient, varargin )
 
 %% Paramters Parsing
 parser = inputParser;
-addRequired(parser,'im', @(x) ~isrow(x) && ~iscolumn(x) && ~isscalar(x));
-addRequired(parser,'radius', @isscalar);
-addOptional(parser,'usegradient', true, @islogical);
-addOptional(parser,'quantization',0.25,@isscalar);
-addOptional(parser,'hough_thresh',0.75,@isscalar);
-parse(parser, im, radius, usegradient, varargin{:});
+parser.addRequired('im', @(x) ~isrow(x) && ~iscolumn(x) && ~isscalar(x));
+parser.addRequired('radius', @isscalar);
+parser.addOptional('usegradient', true, @islogical);
+parser.addParamValue('bw_thresh',[.1, .2, .4, .8], @(x) isrow(x) || iscolumn(x));
+parser.addParamValue('quantization',0.25,@isscalar);
+parser.addParamValue('hough_thresh',0.75,@isscalar);
+
+parser.parse(im, radius, varargin{:});
 
 %% Convert image to grayscale.
 im = rgb2gray(im);
@@ -28,7 +30,7 @@ im = rgb2gray(im);
 % * Accumulate edges.
 edges = false(size(im));
 
-for bwThresh = [.1, .2, .4, .8]
+for bwThresh = parser.Results.bw_thresh
     bwCurrent = im2bw(im, bwThresh); 
     edgesCurrent = edge(bwCurrent, 'canny', [.8, .9]);
     edges = edges | edgesCurrent;
