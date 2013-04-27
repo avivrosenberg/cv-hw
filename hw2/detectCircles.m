@@ -54,7 +54,9 @@ hX = hX'; hY = hY';
 
 % Find nonzero pixels in the image of edges.
 [imX, imY] = find(edges);
-n = length(imX);
+% Move nonzero indices to the hough space
+imX = imX .* q; imY = imY .* q;
+n = length(imX); % number of nonzero pixels
 
 ticId = tic; fprintf(1,' Progress =      ');
 
@@ -64,8 +66,8 @@ ticId = tic; fprintf(1,' Progress =      ');
 % the houghPlane.
 for i=1:n
     fprintf(1,'\b\b\b\b\b%5.1f',(i/n) * 100);
-    
-    dist = round( sqrt( (hX - q * imX(i)).^2 + (hY - q * imY(i)).^2 ) );
+
+    dist = round( sqrt( (hX - imX(i)).^2 + (hY - imY(i)).^2 ) );
     circle = dist == houghRadius;
     houghPlane = houghPlane + circle;
 end
