@@ -52,11 +52,16 @@ houghRadius = round(q * radius);
 [hX, hY] = meshgrid(1:size(houghPlane,1), 1:size(houghPlane,2));
 hX = hX'; hY = hY';
 
-% Find nonzero pixels in the image.
+% Find nonzero pixels in the image of edges.
 [imX, imY] = find(edges);
 n = length(imX);
 
 ticId = tic; fprintf(1,' Progress =      ');
+
+% For each nonzero pixel at [imX(i), imY(i)]:
+% calculate a matrix of distances from that pixel to the rest of the
+% plane. In the places where the distance equals houghRadius, increment
+% the houghPlane.
 for i=1:n
     fprintf(1,'\b\b\b\b\b%5.1f',(i/n) * 100);
     
