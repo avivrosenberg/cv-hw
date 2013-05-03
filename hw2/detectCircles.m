@@ -55,6 +55,7 @@ if (parser.Results.usegradient)
     [gradmag, graddir] = imgradient(edges);
     % Remove small gradients
     gradmag(gradmag < 0.75 * max(max(gradmag))) = 0;
+    
     % Find indices in image corresponding to nonzero gradient
     ind = find(gradmag);
     % Convert linear indices to subscripts.
@@ -76,10 +77,8 @@ if (parser.Results.usegradient)
     votesX = votesX(logicalInd);
     votesY = votesY(logicalInd);
     
-    % Convert the vote indices to houghPlane (quantize and round).
-    houghInd = sub2ind(size(houghPlane), votesY, votesX);
-    
     % Count number of votes for each index
+    houghInd = sub2ind(size(houghPlane), votesY, votesX);
     uniqHoughInd = unique(houghInd);
     countHoughInd = hist(houghInd, uniqHoughInd)';
     
@@ -118,16 +117,15 @@ end
 % These indices are where circles exists in the image.
 
 % We're looking for peaks in the hough plane, so we'll make them 'stand out'.
-houghPlane = imfilter(houghPlane, fspecial('average',2));
-houghPlane = houghPlane.^1.25;
-%[houghPlane, ~] = imgradient(houghPlane);
+houghPlane = houghPlane.^2;
+houghPlane = houghPlane ./ max(max(houghPlane));
 
-
-t = parser.Results.hough_thresh; % Threshold percent for number of votes needed for a circle
-
-[cY, cX] = find(houghPlane >= t * max(max(houghPlane)));
-cX = cX ./ q; cY = cY ./ q;
-centers(:,1) = cX; centers(:,2) = cY;
+% Now we'll try to cluster together adjacent peaks.
+bwHoughPlane = im2bw(houghPlane);
+[houghLabels, numCircles] = bwlabel(bwHoughPlane);
+centers = regionprops(houghLabels, 'Centroid');
+centers = cell2mat({centers.Centroid}');
+centers = round(centers ./ q);
 
 fprintf(1,'\n Done. Elapsed: %.5f [sec]\n', toc(ticId));
 %% DEBUG
@@ -137,6 +135,9 @@ if (parser.Results.usegradient)
     figure; imagesc(gradmag); title('gradmag');
     figure; imagesc(graddir); title('graddir');
 end
-figure; imshow(im); hold on; plot(cX, cY, 'r+', 'MarkerSize', 10); plot(cX, cY, 'ro', 'MarkerSize', 2*radius);
+if (size(centers,1) > 0)
+    figure; imshow(im); hold on; plot(centers(:,1), centers(:,2), 'r+', 'MarkerSize', 10);
+    plot(centers(:,1), centers(:,2), 'ro', 'MarkerSize', 2*radius);
+end
 end
 
