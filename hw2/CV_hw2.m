@@ -15,10 +15,6 @@ im_ladybug = imread('./img/ladybug.jpg');
 im_mooncraters = imread('./img/MoonCraters.jpg');
 im_planets = imread('./img/Planets.jpeg');
 
-%% Question 1
-% 
-% 
-detectCircles(im_mooncraters);
-detectCircles(im_ladybug);
-detectCircles(im_colorful3);
-detectCircles(im_planets);
+im_circle = imread('./img/circle.jpg');
+im_circles = imread('./img/circles.jpg');
+im_circleAndLine = imread('./img/circle-and-line.jpg');
