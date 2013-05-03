@@ -47,60 +47,56 @@ q = parser.Results.quantization; % Quantization factor
 %Initialize Hough Plane, which is madeup of bins that accumulate the 'votes'.
 houghPlane = zeros(ceil(q * imSize1), ceil(q * imSize2));
 [houghSize1, houghSize2] = size(houghPlane);
-houghRadius = round(q * radius);
-
-% Create index-matrices for all indexes in the hough plane.
-[hX, hY] = meshgrid(1:houghSize1, 1:houghSize2);
-hX = hX'; hY = hY';
+houghRadius = q * radius;
 
 ticId = tic;
 
 if (parser.Results.usegradient)
     [gradmag, graddir] = imgradient(edges);
+    % Remove small gradients
+    gradmag(gradmag < 0.75 * max(max(gradmag))) = 0;
     % Find indices in image corresponding to nonzero gradient
     ind = find(gradmag);
-    [imX, imY] = ind2sub([imSize1, imSize2],ind); 
+    % Convert linear indices to subscripts.
+    % switch y/x because in the image x is horizontal (like column).
+    [imY, imX] = ind2sub([imSize1, imSize2],ind);
     
-    n = length(ind); % number of nonzero pixels
     nzGradDir = graddir(ind) * pi / 180;
     
     % Find indices where votes should be cast (in the image plane).
-    votesX1 = imX + houghRadius .* sin(nzGradDir);
-    votesY1 = imY + houghRadius .* cos(nzGradDir);
-    %votesX2 = imX - houghRadius .* sin(nzGradDir);
-    %votesY2 = imY - houghRadius .* cos(nzGradDir);
+    votesX = imX + radius .* cos(nzGradDir);
+    votesY = imY + radius .* sin(nzGradDir);
     
     % Move the above indices to the hough plane.
-    votesX1 = round(q.*votesX1); %votesX2 = round(q.*votesX2);
-    votesY1 = round(q.*votesY1); %votesY2 = round(q.*votesY2);
+    votesX = round(q.*votesX);
+    votesY = round(q.*votesY);
 
     % Use logical indexing to filter out illegal indices.
-    logicalInd1 = (votesX1 > 0 & votesX1 <= houghSize1) & (votesY1 > 0 & votesY1 <= houghSize2);
-    %logicalInd2 = (votesX2 > 0 & votesX2 <= houghSize1) & (votesY2 > 0 & votesY2 <= houghSize2);
-    votesX1 = votesX1(logicalInd1);
-    votesY1 = votesY1(logicalInd1);
-    %votesX2 = votesX2(logicalInd2);
-    %votesY2 = votesY2(logicalInd2);
+    logicalInd = (votesX > 0 & votesX <= houghSize2) & (votesY > 0 & votesY <= houghSize1);
+    votesX = votesX(logicalInd);
+    votesY = votesY(logicalInd);
     
     % Convert the vote indices to houghPlane (quantize and round).
-    houghInd1 = sub2ind(size(houghPlane), votesX1, votesY1);
-    %houghInd2 = sub2ind(size(houghPlane), votesX2, votesY2);
+    houghInd = sub2ind(size(houghPlane), votesY, votesX);
     
     % Count number of votes for each index
-    uniqHoughInd1 = unique(houghInd1);
-    countHoughInd1 = hist(houghInd1, uniqHoughInd1)';
-    %uniqHoughInd2 = unique(houghInd2);
-    %countHoughInd2 = hist(houghInd2, uniqHoughInd2)';
+    uniqHoughInd = unique(houghInd);
+    countHoughInd = hist(houghInd, uniqHoughInd)';
     
     % Cast the votes in the hough plane...
-    houghPlane(uniqHoughInd1) = houghPlane(uniqHoughInd1) + countHoughInd1;
-    %houghPlane(uniqHoughInd2) = houghPlane(uniqHoughInd2) + countHoughInd2;
+    houghPlane(uniqHoughInd) = houghPlane(uniqHoughInd) + countHoughInd;
 else
+    % Create index-matrices for all indexes in the hough plane.
+    % Switch y/x because in the image x is horizontal (like column).
+    [hY, hX] = meshgrid(1:houghSize1, 1:houghSize2);
+    hX = hX'; hY = hY';
+    
     % Find nonzero pixels in the image of edges.
-    [imX, imY] = find(edges);
+    [imY, imX] = find(edges);
     % Move nonzero indices to the hough space
     imX = imX .* q; imY = imY .* q;
     n = length(imX); % number of nonzero pixels
+    rhRadius = round(houghRadius);
     
     fprintf(1,' Progress =      ');
     % For each nonzero pixel at [imX(i), imY(i)]:
@@ -111,7 +107,7 @@ else
         fprintf(1,'\b\b\b\b\b%5.1f',(i/n) * 100);
         
         dist = round( sqrt( (hX - imX(i)).^2 + (hY - imY(i)).^2 ) );
-        circle = dist == houghRadius;
+        circle = dist == rhRadius;
         houghPlane = houghPlane + circle;
     end
 end
@@ -121,16 +117,26 @@ end
 % image plane.
 % These indices are where circles exists in the image.
 
+% We're looking for peaks in the hough plane, so we'll make them 'stand out'.
+houghPlane = imfilter(houghPlane, fspecial('average',2));
+houghPlane = houghPlane.^1.25;
+%[houghPlane, ~] = imgradient(houghPlane);
+
+
 t = parser.Results.hough_thresh; % Threshold percent for number of votes needed for a circle
 
-[cX, cY] = find(houghPlane >= t * max(max(houghPlane)));
+[cY, cX] = find(houghPlane >= t * max(max(houghPlane)));
 cX = cX ./ q; cY = cY ./ q;
 centers(:,1) = cX; centers(:,2) = cY;
 
 fprintf(1,'\n Done. Elapsed: %.5f [sec]\n', toc(ticId));
 %% DEBUG
 figure; imshow(edges);
-figure; imagesc(houghPlane);
-figure; imshow(im); hold on; plot(cY, cX, 'r+', 'MarkerSize', 10); plot(cY, cX, 'ro', 'MarkerSize', 2*radius);
+figure; imagesc(houghPlane); title('hough plane');
+if (parser.Results.usegradient)
+    figure; imagesc(gradmag); title('gradmag');
+    figure; imagesc(graddir); title('graddir');
+end
+figure; imshow(im); hold on; plot(cX, cY, 'r+', 'MarkerSize', 10); plot(cX, cY, 'ro', 'MarkerSize', 2*radius);
 end
 
