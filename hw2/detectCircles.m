@@ -96,7 +96,7 @@ else
     % Move nonzero indices to the hough space
     imX = imX .* q; imY = imY .* q;
     n = length(imX); % number of nonzero pixels
-    rhRadius = round(houghRadius);
+    rhRadius2 = round(houghRadius^2);
     
     fprintf(1,' Progress =      ');
     % For each nonzero pixel at [imX(i), imY(i)]:
@@ -106,9 +106,9 @@ else
     for i=1:n
         fprintf(1,'\b\b\b\b\b%5.1f',(i/n) * 100);
         
-        dist = round( sqrt( (hX - imX(i)).^2 + (hY - imY(i)).^2 ) );
-        circle = dist == rhRadius;
-        houghPlane = houghPlane + circle;
+        dist2 = round( (hX - imX(i)).^2 + (hY - imY(i)).^2 );
+        circleInd = dist2 == rhRadius2;
+        houghPlane(circleInd) = houghPlane(circleInd) + 1;
     end
 end
 
