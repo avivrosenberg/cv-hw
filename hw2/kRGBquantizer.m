@@ -1,4 +1,4 @@
-function [ out_im ] = kRGBquantizer( im , varargin)
+function [ out_im, levels ] = kRGBquantizer( im , varargin)
 %KRGBQUANTIZER Quantized image colors with k-means
 
 %% Paramters Parsing
@@ -26,5 +26,6 @@ out_im = uint8(zeros(size(observations)));
 out_im(:,:) = c(idx,:);
 
 out_im = reshape(out_im, imSz1, imSz2, imSz3);
+levels = c(unique(idx));
 end
 

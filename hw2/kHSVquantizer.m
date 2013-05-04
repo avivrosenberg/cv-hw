@@ -1,4 +1,4 @@
-function [ out_im ] = kHSVquantizer(im, varargin)
+function [ out_im, levels ] = kHSVquantizer(im, varargin)
 %KHSVQUANTIZER Quantized image colors in the HSV plane with k-means
 
 %% Paramters Parsing
@@ -30,6 +30,8 @@ im_hsv(:,1) = c(idx,:);
 % Reshape it back and convert to RGB.
 out_im = reshape(im_hsv, imSz1, imSz2, imSz3);
 out_im = uint8(round(hsv2rgb(out_im) * 255));
+levels = c(unique(idx));
+
 
 end
 
