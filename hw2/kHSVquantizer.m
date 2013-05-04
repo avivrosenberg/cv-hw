@@ -11,7 +11,7 @@ parser.parse(im, varargin{:});
 im_hsv = rgb2hsv(im);
 
 %% Convert image to observations matrix
-c[imSz1,imSz2,imSz3] = size(im_hsv);
+[imSz1,imSz2,imSz3] = size(im_hsv);
 % Reshape HSV so the first column is Hue, second is Saturation, third is Value.
 im_hsv = reshape(im_hsv, imSz1 * imSz2, imSz3);
 % Take only first column, which contains the Hue values, as observations.
@@ -29,7 +29,7 @@ im_hsv(:,1) = c(idx,:);
 
 % Reshape it back and convert to RGB.
 out_im = reshape(im_hsv, imSz1, imSz2, imSz3);
-out_im = hsv2rgb(out_im);
+out_im = uint8(round(hsv2rgb(out_im) * 255));
 
 end
 
