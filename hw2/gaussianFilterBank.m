@@ -1,6 +1,6 @@
 function [ filterBank ] = gaussianFilterBank( angles, sizes, varargin )
-%GAUSSIANFILTERBANK Summary of this function goes here
-%   Detailed explanation goes here
+%GAUSSIANFILTERBANK Create a filter bank of gaussian derivative filters of
+%multiple orientations and scales.
 
 %% Paramters Parsing
 parser = inputParser;
