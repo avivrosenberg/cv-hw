@@ -49,9 +49,9 @@ for i_ = 1:length(imVarNames__);
     imVarName_ = imVarNames__{i_};
     im_ = eval(imVarName_);
     
-    fprintf('\nComputing frames and descriptors for "%s"... ', imVarName_); tic;
-    [frames_, descr_] = sift(im_);
-    fprintf('done (%.3fs)\n',toc);
+    fprintf(2,'\nComputing frames and descriptors for "%s"... ', imVarName_); tic;
+    [frames_, descr_] = sift(im_, 'Threshold', 0.075, 'FirstOctave', 0);
+    fprintf(2,'done (%.3fs)\n',toc);
     
     assignin('base', [framesPrefix__ num2str(i_)], frames_);
     assignin('base', [descriptorsPrefix__  num2str(i_)], descr_);
@@ -73,7 +73,7 @@ for i_ = 1:length(imVarNames__);
     
     % randomly take some of the frames
     ind_ = randperm(size(frames_,2));
-    ind_ = ind_(1:25);
+    ind_ = ind_(1:0.5*length(ind_));
     
     h_ = plotsiftframe(frames_(:,ind_)); set(h_,'LineWidth',1,'Color','g');
     h_ = plotsiftdescriptor(descr_(:,ind_), frames_(:,ind_));
