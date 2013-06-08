@@ -44,7 +44,41 @@ clearvars *_ -except *__;
 
 %% Apply SIFT
 %
-[frames1,descr1] = sift(imStopSign1);
-[frames2,descr2] = sift(imStopSign2);
-[frames3,descr3] = sift(imStopSign3);
-[frames4,descr4] = sift(imStopSign4);
+for i_ = 1:length(imVarNames__);
+    imVarName_ = imVarNames__{i_};
+    im_ = eval(imVarName_);
+    
+    fprintf('\nComputing frames and descriptors for "%s"... ', imVarName_); tic;
+    [frames_, descr_] = sift(im_);
+    fprintf('done (%.3fs)\n',toc);
+    
+    assignin('base', [framesPrefix__ num2str(i_)], frames_);
+    assignin('base', [descriptorsPrefix__  num2str(i_)], descr_);
+end
+clearvars *_ -except *__;
+
+%% q2
+%
+for i_ = 1:length(imVarNames__);
+    imVarName_ = imVarNames__{i_};
+    im_ = eval(imVarName_);
+    
+    figure(i_); clf;
+    imagesc(im_); colormap gray;
+    hold on;
+    
+    frames_ = eval([framesPrefix__ num2str(i_)]);
+    descr_ = eval([descriptorsPrefix__ num2str(i_)]);
+    
+    % randomly take some of the frames
+    ind_ = randperm(size(frames_,2));
+    ind_ = ind_(1:25);
+    
+    h_ = plotsiftframe(frames_(:,ind_)); set(h_,'LineWidth',1,'Color','g');
+    h_ = plotsiftdescriptor(descr_(:,ind_), frames_(:,ind_));
+end
+clearvars *_ -except *__;
+
+%% Clean up variables
+%
+clearvars *_;
