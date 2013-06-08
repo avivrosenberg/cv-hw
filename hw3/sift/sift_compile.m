@@ -4,8 +4,10 @@ function sift_compile(type)
 %   might try other compilers, but most likely you will need to edit
 %   this file.
 
-siftroot = fileparts(which('siftcompile')) ;
-opts = { '-O', '-I.', '-g' } ;
+siftroot = fileparts(which('sift_compile')) ;
+cd(siftroot);
+
+opts = { '-O', '-I.', '-g', '-v' } ;
 opts = { opts{:}, '-v' } ;
 
 if nargin < 1
@@ -13,30 +15,26 @@ if nargin < 1
 end
 
 switch computer
-  case {'PCWIN', 'PCWIN64'}
-    opts = {opts{:}, '-DWINDOWS'} ;
-
-  case 'MAC'
-    opts = {opts{:}, '-DMACOSX'} ;
-    opts = {opts{:}, 'CFLAGS=\$CFLAGS -faltivec'} ;
-
-  case {'MACI', 'MACI64'}
-    opts = {opts{:}, '-DMACOSX'} ;
-
-  case {'GLNX86', 'GLNXA64'}
-    opts = {opts{:}, '-DLINUX' } ;
-
-  otherwise
-    error(['Unsupported architecture ', computer, '. Please edit this M-file to fix the issue.']) ;
+    case {'PCWIN', 'PCWIN64'}
+        opts = {opts{:}, '-DWINDOWS'} ;
+        
+    case 'MAC'
+        opts = {opts{:}, '-DMACOSX'} ;
+        opts = {opts{:}, 'CFLAGS=\$CFLAGS -faltivec'} ;
+        
+    case {'MACI', 'MACI64'}
+        opts = {opts{:}, '-DMACOSX'} ;
+        
+    case {'GLNX86', 'GLNXA64'}
+        opts = {opts{:}, '-DLINUX' } ;
+        
+    otherwise
+        error(['Unsupported architecture ', computer, '. Please edit this M-file to fix the issue.']) ;
 end
 
-mex('imsmooth.c',opts{:}) ;
-mex('siftlocalmax.c',opts{:}) ;
-mex('siftrefinemx.c',opts{:}) ;
-mex('siftormx.c',opts{:}) ;
-mex('siftdescriptor.c',opts{:}) ;
-mex('siftmatch.c',opts{:}) ;
-
-
-
-
+mex('imsmooth.c',opts{:});
+mex('siftlocalmax.c',opts{:});
+mex('siftrefinemx.c',opts{:});
+mex('siftormx.c',opts{:});
+mex('siftdescriptor.c',opts{:});
+mex('siftmatch.c',opts{:});
