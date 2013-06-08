@@ -14,6 +14,7 @@ clear;
 % NOTE: vars ending with '_' are temporary.
 framesPrefix__ = 'frames';
 descriptorsPrefix__ = 'descr';
+matchesPrefix__ = 'matches';
 
 %% Load all images as grayscale
 %
@@ -73,13 +74,35 @@ for i_ = 1:length(imVarNames__);
     
     % randomly take some of the frames
     ind_ = randperm(size(frames_,2));
-    ind_ = ind_(1:0.5*length(ind_));
+    ind_ = ind_(1:floor(0.5*length(ind_)));
     
     h_ = plotsiftframe(frames_(:,ind_)); set(h_,'LineWidth',1,'Color','g');
     h_ = plotsiftdescriptor(descr_(:,ind_), frames_(:,ind_));
 end
 clearvars *_ -except *__;
 
+%% q3
+%
+im1_ = eval(imVarNames__{1});
+descr1_ = eval([descriptorsPrefix__ '1']);
+frames1_ = eval([framesPrefix__ '1']);
+for i_ = 2:length(imVarNames__);
+    % Obtain the two descriptor matrices to match
+    descr2_ = eval([descriptorsPrefix__ num2str(i_)]);
+    
+    % Match them
+    matches_ = findMatches(descr1_, descr2_);
+    
+    % Assign to a variable in the workspace
+    assignin('base', [matchesPrefix__ '1' num2str(i_)], matches_);
+    
+    % plot matches
+    im2_ = eval(imVarNames__{i_});
+    frames2_ = eval([framesPrefix__ num2str(i_)]);
+    figure(str2double(['1' num2str(i_)])); clf;
+    plotmatches(im1_,im2_,frames1_(1:2,:),frames2_(1:2,:),matches_);
+end
+clearvars *_ -except *__;
 %% Clean up variables
 %
 clearvars *_;
