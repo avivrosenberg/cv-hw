@@ -22,38 +22,31 @@ outIm = zeros(size(im2));
 % take Red and Green channels from im2.
 outIm(:,:,1:2) = im2(:,:,1:2);
 
-% first we need to get all the coordinates in im1, so we can transform them
-% into im2 coordinates.
-[m1, n1, ~] = size(im1);
-[X1,Y1] = meshgrid(1:m1,1:n1);
-im1Coords = [ X1(:)'; Y1(:)'; ones(1,m1*n1) ]; % 3xMN matrix of all the coordinates in im1.
-
-% transform into im2, then normalize the homogeneous part (so that w = 1)
-im2Coords = H * im1Coords; % 3xMN matrix of coordinates in im2 reachable from im1.
-im2Coords = hnormalise(im2Coords);
-
-% use the transformed grid to transform the blue channel from im1
+% take the blue channels
 blue1 = im1(:,:,3);
 blue2 = outIm(:,:,3);
 
-for k = 1:(m1*n1)
-    val = blue1(im1Coords(1,k), im1Coords(2,k));
-    if (val == 0), continue; end;
-    
-    x2 = im2Coords(1,k);
-    y2 = im2Coords(2,k);
-    
-    dx2 = x2 - floor(x2);
-    dy2 = y2 - floor(y2);
-    
-    blue2(floor(x2),floor(y2)) = blue2(floor(x2),floor(y2)) + val * dx2 * dy2;
-    blue2(ceil(x2), floor(y2)) = blue2(ceil(x2), floor(y2)) + val * (1-dx2) * dy2;
-    blue2(floor(x2), ceil(y2)) = blue2(floor(x2), ceil(y2)) + val * dx2 * (1-dy2);
-    blue2(ceil(x2),  ceil(y2)) = blue2(ceil(x2),  ceil(y2)) + val * (1-dx2) * (1-dy2);
+% transform im1's blue channel with the transformation H
+if (all(H(3,:) == [0,0,1]))
+    tform = affine2d(H');
+else
+    tform = projective2d(H');
 end
+blue1t = imwarp(blue1, tform, 'cubic');
 
-%blue2 = blue2 - min(blue2(:));
-%blue2 = 255 * blue2 / max(blue2(:));
+% calculate top-left coordinate of im1 trasformed to im2
+x2y2 = H * [1;1;1];
+x2 = floor(x2y2(1));
+y2 = floor(x2y2(2));
+
+% place the transformed image into the correct im2 coordinates
+[t1,t2] = size(blue1t);
+x2vec = x2 + (1:t1);
+y2vec = y2 + (1:t2);
+blue2(x2vec, y2vec) = blue1t;
+
+% clip to im2
+blue2 = blue2(1:size(im2,1), 1:size(im2,2));
 
 outIm(:,:,3) = blue2;
 outIm = uint8(outIm);
