@@ -77,12 +77,18 @@ end
 %
 outIm = zeros(m3,n3,k1);
 
-% Copy im1 and im2 into ouput image
-outIm(offsetRow + (1:m2), offsetCol + (1:n2), :) = im2;
-outIm(1:m1,1:n1,:) = outIm(1:m1,1:n1, :) + im1;
+% Copy im1 into ouput image
+outIm(1:m1,1:n1,:) = im1;
+
+% Copy im2 into ouput image
+im2Rows = (1:m2) + offsetRow;
+im2Cols = (1:n2) + offsetCol;
+outIm(im2Rows, im2Cols, :) = outIm(im2Rows, im2Cols, :) + im2;
 
 % Average pixel values on image boundaries
-outIm(1:min(m1,m2), 1:min(n1,n2), :) = 0.5 * outIm(1:min(m1,m2),1:min(n1,n2),:);
+boundaryRows = 1:min(m1,m2);
+boundaryCols =  1:min(n1,n2);
+outIm(boundaryRows, boundaryCols, :) = 0.5 * outIm(boundaryRows, boundaryCols, :);
 
 %% Calcualte matches
 % Take keypoint XY values from indices of 'kpX' specifeid in 'matches'.
