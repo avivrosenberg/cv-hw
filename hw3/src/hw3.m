@@ -52,7 +52,8 @@ for i_ = 1:length(imVarNames__);
     im_ = eval(imVarName_);
     
     fprintf(2,'\nComputing frames and descriptors for "%s"... ', imVarName_); tic;
-    [frames_, descr_] = sift(im_, 'Threshold', 0.075, 'FirstOctave', 0);
+    %[frames_, descr_] = sift(im_, 'Threshold', 0.075, 'FirstOctave', 0);
+    [frames_, descr_] = sift(im_, 'FirstOctave', 0);
     fprintf(2,'done (%.3fs)\n',toc);
     
     assignin('base', [framesPrefix__ num2str(i_)], frames_);
@@ -61,7 +62,7 @@ end
 clearvars *_ -except *__;
 
 %% q2: Finding keypoint frames and descriptors
-%
+
 for i_ = 1:length(imVarNames__);
     imVarName_ = imVarNames__{i_};
     im_ = eval(imVarName_);
@@ -100,11 +101,41 @@ for i_ = 2:length(imVarNames__);
     % plot matches
     im2_ = eval(imVarNames__{i_});
     frames2_ = eval([framesPrefix__ num2str(i_)]);
-    figure(str2double(['1' num2str(i_)])); clf;
+    figure(str2double(['11' num2str(i_)])); clf;
     plotMatches(im1_,im2_,frames1_(1:2,:),frames2_(1:2,:),matches_,'Placement','vert');
 end
 clearvars *_ -except *__;
 
+%% q5: Find affine matches
+%
+im1_ = eval(imVarNames__{1});
+frames1_ = eval([framesPrefix__ '1']);
+for i_ = 2:length(imVarNames__);
+    % Obtain SIFT frame of image i_
+    frames2_ = eval([framesPrefix__ num2str(i_)]);
+    
+    % Obtain the matches we found previously
+    matches_ = eval([matchesPrefix__ '1' num2str(i_)]);
+    
+    % extract the image coordinates of the matching points
+    pts1_ = frames1_(1:2,matches_(1,:));
+    pts2_ = frames2_(1:2,matches_(2,:));
+    
+    % apply affine matches
+    [~, inliers_, ~] = affineMatches(pts1_, pts2_);
+    
+    % extract inliers
+    matches_ = matches_(:, inliers_);
+    
+    % Assign new matches to a variable in the workspace
+    assignin('base', [matchesPrefix__ 'Affine1' num2str(i_)], matches_);
+    
+    % plot new matches
+    im2_ = eval(imVarNames__{i_});
+    figure(str2double(['21' num2str(i_)])); clf;
+    plotMatches(im1_,im2_,frames1_(1:2,:),frames2_(1:2,:),matches_,'Placement','vert');
+end
+clearvars *_ -except *__;
 %% Clean up variables
 %
 clearvars *_;
