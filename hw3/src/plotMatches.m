@@ -85,29 +85,24 @@ outIm(1:m1,1:n1,:) = outIm(1:m1,1:n1, :) + im1;
 outIm(1:min(m1,m2), 1:min(n1,n2), :) = 0.5 * outIm(1:min(m1,m2),1:min(n1,n2),:);
 
 %% Calcualte matches
-%
-numMatches = size(matches, 2);
-padding = NaN * ones(1, numMatches);
-%padding = [];
-
 % Take keypoint XY values from indices of 'kpX' specifeid in 'matches'.
-% take all x-coordinates (row 1) from kp1 and kp2. Offset so that they are
-% correctly placed in the output image.
+% Offset so that they are correctly placed in the output image.
 
-x = [ kp1(1, matches(1,:));             % matches on im1
-    kp2(1, matches(2,:)) + offsetCol; % matches on im2
-    padding ];
+x1 = kp1(1, matches(1,:)); % x-coord of matches on im1
+y1 = kp1(2, matches(1,:)); % y-coord of matches on im1
 
-% do the same for y-coordinates.
-y = [ kp1(2, matches(1,:));             % matches on im1
-    kp2(2, matches(2,:)) + offsetRow; % matches on im2
-    padding ];
+x2 = kp2(1, matches(2,:)) + offsetCol; % x-coord of matches on im2, offset to output image
+y2 = kp2(2, matches(2,:)) + offsetRow; % y-coord of matches on im2, offset to output image
+
+% We want to draw lines from (x1,y1) to (x2,y2)
+x = [ x1; x2 ];
+y = [ y1; y2 ];
 %% Draw image and match lines
 %
-axes('Position', [0 0 1 1]);
+axes;
 imagesc(outIm); colormap gray; hold on;
 axis off; axis image;
 
-h = line(x(:)', y(:)', 'Marker','+', 'MarkerSize',7, 'Color','g');
+h = line(x, y, 'Marker','+', 'MarkerSize',7, 'Color','g');
 end
 
