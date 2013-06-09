@@ -62,7 +62,7 @@ end
 clearvars *_ -except *__;
 
 %% q2: Finding keypoint frames and descriptors
-
+%
 for i_ = 1:length(imVarNames__);
     imVarName_ = imVarNames__{i_};
     im_ = eval(imVarName_);
@@ -76,7 +76,7 @@ for i_ = 1:length(imVarNames__);
     
     % randomly take some of the frames
     ind_ = randperm(size(frames_,2));
-    ind_ = ind_(1:floor(0.5*length(ind_)));
+    ind_ = ind_(1:10);
     
     h_ = plotsiftframe(frames_(:,ind_)); set(h_,'LineWidth',1,'Color','g');
     h_ = plotsiftdescriptor(descr_(:,ind_), frames_(:,ind_));
