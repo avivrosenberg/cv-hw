@@ -37,7 +37,8 @@ for i_ = 1:length(imageFiles_)
     
     % read image as grayscale, and scale it to [0,1]
     im_ = imreadbw(filepath_);
-    im_ = (im_ - min(im_(:))) / max(im_(:));
+    im_ = im_ - min(im_(:));
+    im_ = im_ / max(im_(:));
     
     % set image into a new variable named according to 'varname'.
     assignin('base', varname_, im_);
