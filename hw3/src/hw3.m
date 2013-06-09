@@ -60,7 +60,7 @@ for i_ = 1:length(imVarNames__);
 end
 clearvars *_ -except *__;
 
-%% q2
+%% q2: Finding keypoint frames and descriptors
 %
 for i_ = 1:length(imVarNames__);
     imVarName_ = imVarNames__{i_};
@@ -82,7 +82,7 @@ for i_ = 1:length(imVarNames__);
 end
 clearvars *_ -except *__;
 
-%% q3
+%% q3 & q4: Finding and plotting matches
 %
 im1_ = eval(imVarNames__{1});
 descr1_ = eval([descriptorsPrefix__ '1']);
@@ -101,9 +101,10 @@ for i_ = 2:length(imVarNames__);
     im2_ = eval(imVarNames__{i_});
     frames2_ = eval([framesPrefix__ num2str(i_)]);
     figure(str2double(['1' num2str(i_)])); clf;
-    plotmatches(im1_,im2_,frames1_(1:2,:),frames2_(1:2,:),matches_);
+    plotMatches(im1_,im2_,frames1_(1:2,:),frames2_(1:2,:),matches_,'Placement','vert');
 end
 clearvars *_ -except *__;
+
 %% Clean up variables
 %
 clearvars *_;
