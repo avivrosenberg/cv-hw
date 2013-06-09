@@ -122,13 +122,14 @@ for i_ = 2:length(imVarNames__);
     pts2_ = frames2_(1:2,matches_(2,:));
     
     % apply affine matches
-    [~, inliers_, ~] = affineMatches(pts1_, pts2_);
+    [H_, inliers_, ~] = affineMatches(pts1_, pts2_);
     
     % extract inliers
     matches_ = matches_(:, inliers_);
     
     % Assign new matches to a variable in the workspace
     assignin('base', [matchesPrefix__ 'Affine1' num2str(i_)], matches_);
+    assignin('base', ['HA1' num2str(i_)], H_);
     
     % plot new matches
     im2_ = eval(imVarNames__{i_});
