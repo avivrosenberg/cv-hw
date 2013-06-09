@@ -1,6 +1,14 @@
 function [tform, inliers, totalError] = transformationMatches(matches1, matches2, varargin)
-%TRANSFORMATIONMATCHES Summary of this function goes here
-%   Detailed explanation goes here
+%TRANSFORMATIONMATCHES Computes affine or homography transformation using RANSAC.
+%   The function recieves two sets of coordinates in matches1 and matches2.
+%   These sould be matrices sized 2xN.
+%   
+%   The function returns the best transformation found for which
+%   tform * matches1 = matches2, with minimal square error (total error for
+%   the transformation on all of the points is returned).
+%
+%   It also returns the column-indices of inliers (as a logical array), so
+%   that the inliers are matches1(:,inliers) and matches2(:,inliers).
 
 %% Parameter parsing
 %
