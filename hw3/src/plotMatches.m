@@ -41,7 +41,7 @@ parser.addRequired('im2', @(x) ndims(x) == 2 || ndims(x) == 3);
 parser.addRequired('kp1', @(x) ndims(x) == 2 && size(x,1) == 2);
 parser.addRequired('kp2', @(x) ndims(x) == 2 && size(x,1) == 2);
 parser.addRequired('matches', @(x) ndims(x) == 2 && size(x,1) == 2);
-parser.addOptional('Placement', 'horz', @(x) strcmp(x,'horz') || strcmp(x,'vert'));
+parser.addParamValue('Placement', 'horz', @(x) strcmp(x,'horz') || strcmp(x,'vert'));
 
 [m1,n1,k1] = size(im1);
 [m2,n2,k2] = size(im2);

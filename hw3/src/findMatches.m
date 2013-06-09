@@ -20,7 +20,7 @@ function [ matches ] = findMatches( desc1, desc2, varargin )
 parser = inputParser;
 parser.addRequired('desc1', @(x) ndims(x) == 2);
 parser.addRequired('desc2', @(x) ndims(x) == 2);
-parser.addOptional('thresh', 0.8, @isscalar);
+parser.addParamValue('thresh', 0.8, @isscalar);
 
 parser.parse(desc1, desc2, varargin{:});
 
