@@ -115,26 +115,11 @@ function [error, inliers] = calcTransformDist(x1, x2, H, th)
     error = sum(error);
 end
 
-% Credit: The following functions were authored by
-% % Peter Kovesi
-% % http://www.csse.uwa.edu.au/~pk
-
-% Normalize homogeneous coordinates so that w = 1
-function nx = hnormalise(x)
-    [rows,~] = size(x);
-    nx = x;
-
-    % Find the indices of the points that are not at infinity
-    finiteind = find(abs(x(rows,:)) > eps);
-
-    for r = 1:rows-1
-        nx(r,finiteind) = x(r,finiteind)./x(rows,finiteind);
-    end
-    nx(rows,finiteind) = 1;
-end
-
 % Shift and scale points so that they're centered at origin with a 
 % mean distance of sqrt(2).
+% Credit: This function was authored by
+% % Peter Kovesi
+% % http://www.csse.uwa.edu.au/~pk
 function [newpts, T] = normalise2dpts(pts)
     if size(pts,1) ~= 3
         error('pts must be 3xN');

@@ -52,23 +52,3 @@ outIm(:,:,3) = blue2;
 outIm = uint8(outIm);
 
 end
-
-%% Helper functions
-
-% Credit: The following functions were authored by
-% % Peter Kovesi
-% % http://www.csse.uwa.edu.au/~pk
-
-% Normalize homogeneous coordinates so that w = 1
-function nx = hnormalise(x)
-    [rows,~] = size(x);
-    nx = x;
-
-    % Find the indices of the points that are not at infinity
-    finiteind = find(abs(x(rows,:)) > eps);
-
-    for r = 1:rows-1
-        nx(r,finiteind) = x(r,finiteind)./x(rows,finiteind);
-    end
-    nx(rows,finiteind) = 1;
-end
