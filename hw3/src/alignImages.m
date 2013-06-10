@@ -35,7 +35,7 @@ end
 blue1t = imwarp(blue1, tform, 'cubic');
 
 % calculate top-left coordinate of im1 trasformed to im2
-x2y2 = H * [1;1;1];
+x2y2 = hnormalise(H * [1;1;1]);
 x2 = floor(x2y2(1));
 y2 = floor(x2y2(2));
 
