@@ -46,6 +46,7 @@ end
 H = zeros(3,3);
 minDist = Inf;
 bestInliers = zeros(1,nPoints);
+useInliers = false;
 
 % create homogeneous coordinates 
 matches1 = [matches1; ones(1,nPoints)];
@@ -57,12 +58,19 @@ matches2 = [matches2; ones(1,nPoints)];
 %% RANSAC
 %
 for i = 1:maxIter
-    % select random points
-    randInd = randperm(nPoints);
-    pts1 = matches1(:,randInd(1:nRand));
-    pts2 = matches2(:,randInd(1:nRand));
     
-    % compute transformation matrix
+    if (useInliers)
+        % select inliers from previous iteration
+        pts1 = matches1(:,bestInliers);
+        pts2 = matches2(:,bestInliers);
+    else
+        % select random points
+        randInd = randperm(nPoints);
+        pts1 = matches1(:,randInd(1:nRand));
+        pts2 = matches2(:,randInd(1:nRand));
+    end
+    
+    % compute transformation matrix from pts1 and pts2
     currH = computeTransform(pts1, pts2);
     
     % check the transform
@@ -73,6 +81,11 @@ for i = 1:maxIter
         H = currH;
         minDist = currDist;
         bestInliers = inliers;
+        % next iteration, use inliers from this iteration
+        useInliers = true;
+    else
+        % next iteration, use random points
+        useInliers = false;
     end
 end
 
