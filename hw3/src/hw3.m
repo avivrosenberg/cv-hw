@@ -42,6 +42,11 @@ for i_ = 1:length(imageFiles_)
     
     % set image into a new variable named according to 'varname'.
     assignin('base', varname_, im_);
+    
+    % also read as color
+    im_ = imread(filepath_);
+    assignin('base', [varname_ 'c'], im_);
+    
 end
 clearvars *_ -except *__;
 
@@ -82,7 +87,7 @@ for i_ = 1:length(imVarNames__);
     h_ = plotsiftdescriptor(descr_(:,ind_), frames_(:,ind_));
 end
 clearvars *_ -except *__;
-
+%
 %% q3 & q4: Finding and plotting matches
 %
 im1_ = eval(imVarNames__{1});
@@ -93,7 +98,7 @@ for i_ = 2:length(imVarNames__);
     descr2_ = eval([descriptorsPrefix__ num2str(i_)]);
     
     % Match them
-    matches_ = findMatches(descr1_, descr2_);
+    matches_ = findMatches(descr1_, descr2_, 'thresh', 1.0);
     
     % Assign to a variable in the workspace
     assignin('base', [matchesPrefix__ '1' num2str(i_)], matches_);
@@ -101,11 +106,11 @@ for i_ = 2:length(imVarNames__);
     % plot matches
     im2_ = eval(imVarNames__{i_});
     frames2_ = eval([framesPrefix__ num2str(i_)]);
-    figure(str2double(['11' num2str(i_)])); clf;
-    plotMatches(im1_,im2_,frames1_(1:2,:),frames2_(1:2,:),matches_,'Placement','vert');
+    figure(str2double(['11' num2str(i_)])); axis image; clf;
+    plotMatches(im1_,im2_,frames1_(1:2,:),frames2_(1:2,:),matches_,'Placement','horz');
 end
 clearvars *_ -except *__;
-
+%
 %% q5: Find affine matches
 %
 im1_ = eval(imVarNames__{1});
@@ -133,8 +138,28 @@ for i_ = 2:length(imVarNames__);
     
     % plot new matches
     im2_ = eval(imVarNames__{i_});
-    figure(str2double(['21' num2str(i_)])); clf;
-    plotMatches(im1_,im2_,frames1_(1:2,:),frames2_(1:2,:),matches_,'Placement','vert');
+    figure(str2double(['21' num2str(i_)])); axis image; clf;
+    plotMatches(im1_,im2_,frames1_(1:2,:),frames2_(1:2,:),matches_,'Placement','horz');
+end
+clearvars *_ -except *__;
+%
+%% q6: Align Affine
+%
+% Obtain first color image
+im1_ = eval([imVarNames__{1} 'c']);
+for i_ = 2:length(imVarNames__);
+    % Obtain second color image
+    im2_ = eval([imVarNames__{i_} 'c']);
+    
+    % Obtain affine transform between them
+    H_ = eval(['HA1' num2str(i_)]);
+    
+    % Compute aligned image
+    imAligned_ = alignImages(im1_, im2_, H_);
+    
+    % Show it
+    figure(str2double(['31' num2str(i_)]));
+    imshow(imAligned_);
 end
 clearvars *_ -except *__;
 %% Clean up variables
