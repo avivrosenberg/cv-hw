@@ -166,6 +166,7 @@ clearvars *_ -except *__;
 %% q8: Find homography matches
 %
 im1_ = eval(imVarNames__{1});
+im1c_ = eval([imVarNames__{1} 'c']);
 frames1_ = eval([framesPrefix__ '1']);
 for i_ = 2:length(imVarNames__);
     % Obtain SIFT frame of image i_
@@ -192,6 +193,17 @@ for i_ = 2:length(imVarNames__);
     im2_ = eval(imVarNames__{i_});
     figure(str2double(['41' num2str(i_)])); axis image; clf;
     plotMatches(im1_,im2_,frames1_(1:2,:),frames2_(1:2,:),matches_,'Placement','horz');
+    
+    % Align images
+    % Obtain second color image
+    im2c_ = eval([imVarNames__{i_} 'c']);
+    
+    % Compute aligned image
+    imAligned_ = alignImages(im1c_, im2c_, H_);
+    
+    % Show it
+    figure(str2double(['51' num2str(i_)]));
+    imshow(imAligned_);
 end
 clearvars *_ -except *__;
 %% Clean up variables
