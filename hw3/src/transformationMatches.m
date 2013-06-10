@@ -16,13 +16,13 @@ parser = inputParser;
 parser.addRequired('matches1', @(x) ndims(x) == 2 && size(x,1) == 2);
 parser.addRequired('matches2', @(x) ndims(x) == 2 && size(x,1) == 2);
 parser.addParamValue('TransformType', 'affine', @(x) strcmp(x,'affine') || strcmp(x,'homography'));
-parser.addParamValue('MaxIterations', 1000, @isscalar);
-parser.addParamValue('MinSquareDistThresh', 0.25, @isscalar);
+parser.addParamValue('Iterations', 1000, @isscalar);
+parser.addParamValue('MaxSquareDistThresh', 0.25, @isscalar);
 parser.addParamValue('MinInliersPerTransform', 5, @isscalar);
 
 parser.parse(matches1, matches2, varargin{:});
-maxIter = parser.Results.MaxIterations;
-distThresh = parser.Results.MinSquareDistThresh;
+maxIter = parser.Results.Iterations;
+distThresh = parser.Results.MaxSquareDistThresh;
 minInliers = parser.Results.MinInliersPerTransform;
 
 [~, nPoints] = size(matches1);
