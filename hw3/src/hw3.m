@@ -126,7 +126,7 @@ for i_ = 2:length(imVarNames__);
     pts1_ = frames1_(1:2,matches_(1,:));
     pts2_ = frames2_(1:2,matches_(2,:));
     
-    % apply affine matches
+    % find affine matches
     [H_, inliers_, ~] = affineMatches(pts1_, pts2_);
     
     % extract inliers
@@ -160,6 +160,38 @@ for i_ = 2:length(imVarNames__);
     % Show it
     figure(str2double(['31' num2str(i_)]));
     imshow(imAligned_);
+end
+clearvars *_ -except *__;
+%
+%% q8: Find homography matches
+%
+im1_ = eval(imVarNames__{1});
+frames1_ = eval([framesPrefix__ '1']);
+for i_ = 2:length(imVarNames__);
+    % Obtain SIFT frame of image i_
+    frames2_ = eval([framesPrefix__ num2str(i_)]);
+    
+    % Obtain the matches we found previously
+    matches_ = eval([matchesPrefix__ '1' num2str(i_)]);
+    
+    % extract the image coordinates of the matching points
+    pts1_ = frames1_(1:2,matches_(1,:));
+    pts2_ = frames2_(1:2,matches_(2,:));
+    
+    % find homography matches
+    [H_, inliers_, ~] = homographyMatches(pts1_, pts2_);
+    
+    % extract inliers
+    matches_ = matches_(:, inliers_);
+    
+    % Assign new matches to a variable in the workspace
+    assignin('base', [matchesPrefix__ 'Homography1' num2str(i_)], matches_);
+    assignin('base', ['HH1' num2str(i_)], H_);
+    
+    % plot new matches
+    im2_ = eval(imVarNames__{i_});
+    figure(str2double(['41' num2str(i_)])); axis image; clf;
+    plotMatches(im1_,im2_,frames1_(1:2,:),frames2_(1:2,:),matches_,'Placement','horz');
 end
 clearvars *_ -except *__;
 %% Clean up variables
