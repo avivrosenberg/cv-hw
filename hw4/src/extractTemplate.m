@@ -5,7 +5,7 @@ function [ im_out ] = extractTemplate( im_template, im_test, varargin )
 %% Input parsing
 %
 
-featFunc = @(im) sift(im, 'FirstOctave', 0);
+featFunc = @(im) sift(im);
 
 %% Features calculation
 % 
@@ -21,7 +21,7 @@ featFunc = @(im) sift(im, 'FirstOctave', 0);
 % Use RANSAC to find an affine transform between the matching point, and
 % discard all matches not fitting the transform.
 
-matches = findMatches(templDescr, testDescr);
+matches = findMatches(templDescr, testDescr, 'thresh', 0.8);
 
 % extract image coordinates of the matches.
 pts1 = templFrames(1:2,matches(1,:));
@@ -29,11 +29,16 @@ pts2 = testFrames (1:2,matches(2,:));
 
 % find affine transform from matches 
 [~, inliers, ~] = transformationMatches(pts1, pts2, 'TransformType', 'affine');
-
 % use transform's inliers to filter out bad matches
 matches = matches(:, inliers);
+
 pts1 = templFrames(1:2,matches(1,:));
 pts2 = testFrames (1:2,matches(2,:));
 
+%% DEBUG
+%
+%
+
+plotMatches(im_template,im_test,templFrames(1:2,:),testFrames(1:2,:),matches,'Placement','horz');
 end
 
