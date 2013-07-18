@@ -26,6 +26,16 @@ parser.addParamValue('clustertype', 'ward', @(x) strcmp(x,'ward') || strcmp(x,'k
 parser.addParamValue('maxclusters', 5, @isscalar);
 
 parser.parse(im_tmpl, kp_tmpl, kp_test, varargin{:});
+
+if (size(kp_tmpl) ~= size(kp_test))
+    error('Keypoint matrices must have same dimentions');
+end
+
+% if 10% of the keypoints is less than maxclusters, we can't initialize
+% kmeans with 'cluster' mode.
+if (size(kp_tmpl,2) * 0.1 <= parser.Results.maxclusters)
+    kmeansinit = 'sample'; else kmeansinit = 'cluster';
+end
 %% Extract keypoint data
 
 % frame x/y values are ZERO based, so add 1
@@ -77,7 +87,7 @@ switch (parser.Results.clustertype)
         
     case 'kmeans'
         clusters_idx = kmeans(votes', parser.Results.maxclusters, ...
-                              'emptyaction','drop', 'start','cluster', 'replicates', 2);
+                              'emptyaction','drop', 'start', kmeansinit, 'replicates', 2);
 end
 
 % actual voting: select the cluster with the most members
