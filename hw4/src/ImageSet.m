@@ -16,6 +16,10 @@ classdef ImageSet
         gImages;
     end
     
+    properties (Dependent = true)
+        size;
+    end
+    
     methods
         function set = ImageSet( imfolder , scaleToHeight )
             imageFiles = strsplit(ls(imfolder)); % all file names in folder
@@ -56,7 +60,10 @@ classdef ImageSet
                 
             end
         end
-
+        
+        function value = get.size(obj)
+            value = length(obj.gImages);
+        end
     end
     
     methods (Static, Access=private)
