@@ -77,7 +77,7 @@ switch (parser.Results.clustertype)
         
     case 'kmeans'
         clusters_idx = kmeans(votes', parser.Results.maxclusters, ...
-                              'emptyaction','drop', 'start','cluster');
+                              'emptyaction','drop', 'start','cluster', 'replicates', 2);
 end
 
 % actual voting: select the cluster with the most members
