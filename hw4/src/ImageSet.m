@@ -86,13 +86,26 @@ classdef ImageSet
         function labelSet = getLabels(set)
             %% GETLABELS Find and label the template image in the other images.
             
+            % disable some warnings
+            warn_state = warning;
+            warning('off','stats:kmeans:EmptyClusterRep');
+            warning('off','stats:kmeans:EmptyCluster');
+            
             labelSet = cell(1, set.size);
-            templateKeypoints = [];
-            templateDescriptors = [];
+            
+            % Compute homogeneous xy-coordinates of the corner pixels in the template
+            [nrow, ncol,~] = size(set.cTemplate);
+            templateHCoords = [0 0 1; ncol 0 1; ncol nrow 1; 0 nrow 1]'; % flip columns/rows because it's an image... 
+            
+            % Loop over all images, find object and apply segmentation
+            templateKeypoints = [];     % template keypoints and descriptors will be cached
+            templateDescriptors = [];   % to prevent re-computation each iteration.
             for i=1:set.size
                 
                 fprintf(1,'\nImageSet:getLabels Processing image #%d...', i); tic;
                 
+                % Find some points in the test image that could belong to the object
+                % and a transformation from template image coordinate to test image coordinates.
                 [objectPoints, tform, templateKeypoints, templateDescriptors] = ...
                     findTemplate(set.gTemplate, set.gImages{i}, ...
                     templateKeypoints, templateDescriptors, 'maxclusters',9,'matchthresh',0.9,'transformtype','affine');
@@ -105,13 +118,31 @@ classdef ImageSet
                     fprintf(1,' object found (%.3fs). Applying segmentation...', toc); tic;
                 end             
                 
-                backgroundRegion = [];
+                % Compute the corner's xy-coordinates in the test image
+                % of the region that might belong to the object.
+                objectBounds = tform * templateHCoords; % [x1 y1 w1; x2 y2 w2 ...]'
+                objectBounds = hnormalise(objectBounds); % [x1 y1 1; x2 y2 1 ...]'
                 
-                objectLabel = labelTemplate(objectPoints, backgroundRegion);
+                % Create an approximate labeling - all pixels in the object
+                % region will be labeled '1', the rest '0'.
+                approximateLabel = poly2mask(objectBounds(1,:), objectBounds(2,:), ...
+                                             size(set.gImages{i},1), size(set.gImages{i},2));
+                
+                % DEBUG
+                if (nargout == 0)
+                    figure; imshow(set.cImages{i});
+                    patch(objectBounds(1,:), objectBounds(2,:),ones(1,4),'EdgeColor','r','FaceColor','none');
+                    figure; imagesc(approximateLabel);
+                end
+                
+                % Use GraphCut to compute the exact label from the approx. label
+                objectLabel = labelTemplate(objectPoints, approximateLabel);
                 labelSet{1,i} = objectLabel;
                 fprintf(1,' done (%.3fs).', toc);
             end
 
+            % restore warnings
+            warning(warn_state);
         end
     end
     
