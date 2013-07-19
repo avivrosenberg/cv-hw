@@ -1,15 +1,4 @@
 classdef ImageSet
-    %IMAGESET Loads image set with template image.
-    %   Loads the contents of a directory containing an image set.
-    %   An image set directory should contain .jpg files, with one named
-    %   template.jpg, and the rest named arbitrarily.
-    %   The returned set is structured in the following way:
-    %       o set.cTemplate - color template image for the set
-    %       o set.cImages - cell array with images in color
-    %       o set.gTemplate - grayscale template image for the set
-    %       o set.gImages - cell array with images in grayscale
-    %       o set.labTemplate - L*a*b template image for the set
-    %       o set.labImages - cell array with images in L*a*b
     
     properties (SetAccess=private)
         % color (original)
@@ -29,20 +18,31 @@ classdef ImageSet
     
     methods
         function set = ImageSet( imfolder , scaleToHeight )
-            fprintf(1,'\nImageSet: Loading set from %s...', imfolder);
+            %% IMAGESET Loads image set with template image.
+            %   Loads the contents of a directory containing an image set.
+            %   An image set directory should contain .jpg files, with one named
+            %   template.jpg, and the rest named arbitrarily.
+            %   The returned set is structured in the following way:
+            %       o set.cTemplate - color template image for the set
+            %       o set.cImages - cell array with images in color
+            %       o set.gTemplate - grayscale template image for the set
+            %       o set.gImages - cell array with images in grayscale
+            %       o set.labTemplate - L*a*b template image for the set
+            %       o set.labImages - cell array with images in L*a*b
+            fprintf(1,'\nImageSet: Loading set from %s...', imfolder); tic;
             imageFiles = strsplit(ls(imfolder)); % all file names in folder
             imageFiles = imageFiles(1:end-1); % remove empty string
             
             % initialize sets
             numImages = length(imageFiles) - 1; % subtract one for the template image
-            set.cImages = cell(1, numImages); 
+            set.cImages = cell(1, numImages);
             set.gImages = cell(1, numImages);
             
             idx = 1;
             
             for i_ = 1:length(imageFiles)
                 imFileName = imageFiles{i_};
-
+                
                 % build full path to the image file
                 filepath = [imfolder '/' imFileName];
                 fprintf(1,'\n\tReading image "%s"...', imFileName);
@@ -58,7 +58,7 @@ classdef ImageSet
                     imGray = double(imColor);
                 end
                 imGray = imGray - min(imGray(:));
-                imGray = imGray / max(imGray(:));               
+                imGray = imGray / max(imGray(:));
                 
                 % convert image to L*a*b
                 imLab = applycform(imColor, makecform('srgb2lab'));
@@ -73,13 +73,45 @@ classdef ImageSet
                     set.gImages{1,idx} = imGray;
                     set.labImages{1,idx} = imLab;
                     idx = idx + 1;
-                end   
+                end
             end
-            fprintf(1,'\nImageSet: ...Done loading set from %s.\n', imfolder);
+            fprintf(1,'\nImageSet: ...Done (%.3fs).\n', toc);
         end
         
         function value = get.size(obj)
+            %% SIZE returns the number of images in the set.
             value = length(obj.gImages);
+        end
+    
+        function labelSet = getLabels(set)
+            %% GETLABELS Find and label the template image in the other images.
+            
+            labelSet = cell(1, set.size);
+            templateKeypoints = [];
+            templateDescriptors = [];
+            for i=1:set.size
+                
+                fprintf(1,'\nImageSet:getLabels Processing image #%d...', i); tic;
+                
+                [objectPoints, tform, templateKeypoints, templateDescriptors] = ...
+                    findTemplate(set.gTemplate, set.gImages{i}, ...
+                    templateKeypoints, templateDescriptors, 'maxclusters',9,'matchthresh',0.9,'transformtype','affine');
+                
+                if (size(objectPoints,2) < 10)
+                    fprintf(2,' object not found, skipping.');
+                    labelSet{1,i} = [];
+                    continue;
+                else
+                    fprintf(1,' object found (%.3fs). Applying segmentation...', toc); tic;
+                end             
+                
+                backgroundRegion = [];
+                
+                objectLabel = labelTemplate(objectPoints, backgroundRegion);
+                labelSet{1,i} = objectLabel;
+                fprintf(1,' done (%.3fs).', toc);
+            end
+
         end
     end
     
