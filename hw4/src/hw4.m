@@ -6,12 +6,21 @@
 %% Load Image Sets
 %
 close all;
-clear;
+clearvars -except *Set;
 
-basepath = fileparts(mfilename('fullpath'));
-imfolder = [basepath '/../img/'];
-imHeight = 500; % desired height in pixels to load the images in
+basepath_ = fileparts(mfilename('fullpath'));
+imfolder_ = [basepath_ '/../img/'];
+imHeight_ = 300; % desired height in pixels to load the images in
 
-supermanSet = ImageSet([imfolder 'Superman'], imHeight);
-starbucksSet = ImageSet([imfolder 'Starbucks'], imHeight);
-roadsignSet = ImageSet([imfolder 'Roadsign'], imHeight);
+if (~exist('supermanSet', 'var'))
+    supermanSet = ImageSet([imfolder_ 'Superman'], imHeight_);
+end
+if (~exist('roadsignSet', 'var'))
+    roadsignSet = ImageSet([imfolder_ 'Roadsign'], imHeight_);
+end
+if (~exist('starbucksSet', 'var'))
+    starbucksSet = ImageSet([imfolder_ 'Starbucks'], imHeight_);
+end
+
+clearvars *_;
+
