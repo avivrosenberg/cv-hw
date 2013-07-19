@@ -1,8 +1,8 @@
-function [ c ] = labelTemplate( a, b )
+function [ labels ] = labelTemplate( seeds )
 %LABELTEMPLATE Summary of this function goes here
 %   Detailed explanation goes here
 
-c = [];
+labels = [];
 
 end
 

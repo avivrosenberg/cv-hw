@@ -82,7 +82,7 @@ classdef ImageSet
             %% SIZE returns the number of images in the set.
             value = length(obj.gImages);
         end
-    
+        
         function labelSet = getLabels(set)
             %% GETLABELS Find and label the template image in the other images.
             
@@ -95,7 +95,7 @@ classdef ImageSet
             
             % Compute homogeneous xy-coordinates of the corner pixels in the template
             [nrow, ncol,~] = size(set.cTemplate);
-            templateHCoords = [0 0 1; ncol 0 1; ncol nrow 1; 0 nrow 1]'; % flip columns/rows because it's an image... 
+            templateHCoords = [0 0 1; ncol 0 1; ncol nrow 1; 0 nrow 1]'; % flip columns/rows because it's an image...
             
             % Loop over all images, find object and apply segmentation
             templateKeypoints = [];     % template keypoints and descriptors will be cached
@@ -116,7 +116,7 @@ classdef ImageSet
                     continue;
                 else
                     fprintf(1,' object found (%.3fs). Applying segmentation...', toc); tic;
-                end             
+                end
                 
                 % Compute the corner's xy-coordinates in the test image
                 % of the region that might belong to the object.
@@ -125,22 +125,27 @@ classdef ImageSet
                 
                 % Create an approximate labeling - all pixels in the object
                 % region will be labeled '1', the rest '0'.
-                approximateLabel = poly2mask(objectBounds(1,:), objectBounds(2,:), ...
-                                             size(set.gImages{i},1), size(set.gImages{i},2));
+                approximateLabels = poly2mask(objectBounds(1,:), objectBounds(2,:), ...
+                    size(set.gImages{i},1), size(set.gImages{i},2));
+                approximateLabels = uint8(approximateLabels);
+                
+                % Now label all the keypoints that are on the object with '2'.
+                objectInd = sub2ind(size(approximateLabels), round(objectPoints(2,:)), round(objectPoints(1,:)));
+                approximateLabels(objectInd) = 2;
                 
                 % DEBUG
                 if (nargout == 0)
                     figure; imshow(set.cImages{i});
                     patch(objectBounds(1,:), objectBounds(2,:),ones(1,4),'EdgeColor','r','FaceColor','none');
-                    figure; imagesc(approximateLabel);
+                    figure; imagesc(approximateLabels);
                 end
                 
-                % Use GraphCut to compute the exact label from the approx. label
-                objectLabel = labelTemplate(objectPoints, approximateLabel);
+                % Use GraphCut to compute the exact labels from the approximate labels
+                objectLabel = labelTemplate(approximateLabels);
                 labelSet{1,i} = objectLabel;
                 fprintf(1,' done (%.3fs).', toc);
             end
-
+            
             % restore warnings
             warning(warn_state);
         end
