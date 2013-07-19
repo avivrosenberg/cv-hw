@@ -2,3 +2,6 @@
 html/
 out/
 
+# ignore mex binaries
+*.mex*
+
