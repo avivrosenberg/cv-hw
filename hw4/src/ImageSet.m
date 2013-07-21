@@ -83,13 +83,19 @@ classdef ImageSet
             value = length(obj.gImages);
         end
         
-        function labelSet = getLabels(set)
+        function labelSet = getLabels(set, varargin)
             %% GETLABELS Find and label the template image in the other images.
+            
+            parser = inputParser;
+            parser.addOptional('idx', 1:set.size, @isvector);
+            parser.parse(varargin{:});
             
             % disable some warnings
             warn_state = warning;
             warning('off','stats:kmeans:EmptyClusterRep');
             warning('off','stats:kmeans:EmptyCluster');
+            warning('off','MATLAB:singularMatrix');
+            warning('off','MATLAB:nearlySingularMatrix');
             
             labelSet = cell(1, set.size);
             
@@ -100,7 +106,7 @@ classdef ImageSet
             % Loop over all images, find object and apply segmentation
             templateKeypoints = [];     % template keypoints and descriptors will be cached
             templateDescriptors = [];   % to prevent re-computation each iteration.
-            for i=1:set.size
+            for i=parser.Results.idx
                 
                 fprintf(1,'\nImageSet:getLabels Processing image #%d...', i); tic;
                 
@@ -141,7 +147,7 @@ classdef ImageSet
                 end
                 
                 % Use GraphCut to compute the exact labels from the approximate labels
-                objectLabel = labelTemplate(approximateLabels);
+                objectLabel = labelTemplate(set.cTemplate, set.cImages{i}, approximateLabels);
                 labelSet{1,i} = objectLabel;
                 fprintf(1,' done (%.3fs).', toc);
             end
