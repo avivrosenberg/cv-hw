@@ -147,7 +147,7 @@ classdef ImageSet
                 end
                 
                 % Use GraphCut to compute the exact labels from the approximate labels
-                objectLabel = labelTemplate(set.cTemplate, set.cImages{i}, approximateLabels);
+                objectLabel = labelTemplate(set.cTemplate, set.cImages{i}, affine2d(tform'), approximateLabels);
                 labelSet{1,i} = objectLabel;
                 fprintf(1,' done (%.3fs).', toc);
             end

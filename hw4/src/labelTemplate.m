@@ -1,4 +1,4 @@
-function [ labels ] = labelTemplate( tmpl_im, im, seeds )
+function [ labels ] = labelTemplate( tmpl_im, im, tform, seeds )
 %LABELTEMPLATE Apply GraphCut segmentation to an image mask.
 %   Seeds should be a matrix containing a mask for pixels of some image.
 %   Value in 'seeds' should be as follows:
@@ -18,22 +18,10 @@ function [ labels ] = labelTemplate( tmpl_im, im, seeds )
 tmpl_im = im2double(tmpl_im);
 im = im2double(im);
 
-%seeds = imdilate(seeds,strel('disk',2,4));
-
-% cluster the template image colors into k regions
-k = 5;
-data = reshape(tmpl_im, size(tmpl_im,1)*size(tmpl_im,2),3);
-[~, means] = kmeans(data, k, 'maxiter',200, 'emptyaction', 'drop');
-
-[ii,jj] = find( seeds == 1 );
-
-
 %% Set up the cost matrix for each edge (Boundary properties/Pairwise potentials)
 %
 
-%[vC, hC] = pairwisePotential(im);
-[vC, hC] = spatialCues(im);
-
+[vC, hC] = pairwisePotential(im);
 maxPairwise = 1   + max(max(vC + hC));
 
 %% Set up the cost matrix for each pixel (Region properties/Unary potentials)
@@ -41,20 +29,28 @@ maxPairwise = 1   + max(max(vC + hC));
 % The cost should be a propability of the pixel belonging to the object or
 % background.
 
+% warp template into image coordinates
+tmpl_warped = imwarp(tmpl_im, tform);
+[x0_im, y0_im] = tform.transformPointsForward(1,1);
+x_im = ceil(x0_im):(x0_im+size(tmpl_warped,2));
+y_im = ceil(y0_im):(y0_im+size(tmpl_warped,1));
+% get the region in the image that should contain the object
+im_obj_region = im(y_im,x_im,:);
+
+% Average-out the regions and compute the pixelwise difference
+filt = fspecial('gaussian', 3, 1.5);
+tmpl_warped = imfilter(tmpl_warped, filt);
+im_obj_region = imfilter(im_obj_region, filt);
+diff = sqrt( (tmpl_warped - im_obj_region).^2 );
+diff = mat2gray(rgb2gray(diff)); % mat2gray used to strech values into [0,1]
+
 % propability that a pixel in the 'unknown' region actually does belong to
 % the object.
-pr = zeros(size(seeds));
-for kk=1:length(ii)
-    rgb = reshape( im(ii(kk),jj(kk),:), 1, 3);
-    rgb = repmat(rgb, k, 1);
-    diff2 = sum((means - rgb).^2,2);
-    
-    pr(ii(kk), jj(kk)) = min(diff2);
-end
-% Normalize ot [0,1] and inverse, so high pr means high probablity of being
-% an object pixel.
-pr = (pr-min(pr(:))) ./ (max(pr(:)-min(pr(:))));
-pr(ii,jj) = 1 - pr(ii,jj);
+pr = ones(size(seeds));
+pr(y_im, x_im) = diff;
+
+% High pr means high probablity of being an object pixel.
+pr = 1 - pr;
 % Add a small value to pr to prevent having zero probability
 pr = pr + exp(-maxPairwise);
 pr(pr >= 1) = 1 - exp(-maxPairwise);
@@ -88,10 +84,10 @@ init_labels(seeds == 2) = 0;
 
 %% Applying GC
 
-smoothness_cost = 2.0 * (ones(2)-eye(2));
+smoothness_cost = 0.22 * (ones(2)-eye(2));
 
 tic;[gch] = GraphCut('open', data_cost, smoothness_cost, vC, hC);toc;
-%tic;[gch] = GraphCut('set', gch, init_labels);toc;
+tic;[gch] = GraphCut('set', gch, init_labels);toc;
 tic;[gch, labels] = GraphCut('swap', gch);toc;
 GraphCut('close', gch);
 figure;imagesc(labels);
@@ -107,18 +103,7 @@ end
 p = -log(pr);
 end
 
-function [vert, horz] = pairwisePotential(im)
-    
-    [n, m] = size(im);
-    
-    vert_diff = im - [im(2:end,:); zeros(1, m)];
-    horz_diff = im - [im(:,2:end)  zeros(n, 1)];
-    
-    vert = exp(- vert_diff.^2 ./ 2 ./ 1.0^2 );
-    horz = exp(- horz_diff.^2 ./ 2 ./ 1.0^2 );
-end
-
-function [vC, hC] = spatialCues(im)
+function [vC, hC] = pairwisePotential(im)   
 g = fspecial('gauss', [13 13], sqrt(13));
 dy = fspecial('sobel');
 vf = conv2(g, dy, 'valid');
