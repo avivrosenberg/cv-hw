@@ -10,18 +10,22 @@ function [ labels ] = labelTemplate( tmpl_im, im, tform, seeds )
 %   it contains '1' at pixels which have been found to belong to the
 %   object, and '0' elsewhere.
 
-[nrow, ncol] = size(seeds);
+
 
 %% Preprocessing
 %
+% save original color images but convert everything to double
+tmpl_im_color = im2double(tmpl_im);
+im_color = im2double(im);
 
-tmpl_im = rgb2gray( im2double(tmpl_im) );
-im = rgb2gray( im2double(im) );
+tmpl_im = rgb2gray( tmpl_im_color );
+im = rgb2gray( im_color );
 
+[nrow, ncol] = size(seeds);
 
 %% Set up the cost matrix for each edge (Boundary properties/Pairwise potentials)
 %
-
+%
 [vC, hC] = pairwisePotential(im);
 maxPairwise = 1   + max(max(vC + hC));
 
@@ -44,30 +48,24 @@ yxdiff = size(tmpl_warped) - size(im_obj_region);
 yxdiff = [floor(yxdiff./2); ceil(yxdiff./2)];
 tmpl_warped = tmpl_warped((1+yxdiff(1,1)):(end-yxdiff(2,1)), (1+yxdiff(1,2)):(end-yxdiff(2,2)));
 
-% Compute gradients to get more 'important' regions
-[gm1,gd1] = imgradient(tmpl_warped);
-[gm2,gd2] = imgradient(im_obj_region);
+% Compute gradient-based unary potential.
+% This comapres gradient magnitude and direction between template and image region,
+% to compute a probability for each pixel in the image region of whether it belongs to the object.
+pr1 = unaryPotentialGradients(tmpl_warped, im_obj_region);
 
-% Spead out the energy since the images are probably not exactly aligned
-gfilt = fspecial('gauss', [13 13], sqrt(13));
-gm1 = imfilter(gm1, gfilt);
-gm2 = imfilter(gm2, gfilt);
+% Compute color-based unary potential.
+% This comapres the colors between template and image region.
+tmpl_warped_color = imwarp(tmpl_im_color, tform);
+tmpl_warped_color = tmpl_warped_color((1+yxdiff(1,1)):(end-yxdiff(2,1)), (1+yxdiff(1,2)):(end-yxdiff(2,2)), :);
+im_obj_region_color = im_color(y_im,x_im,:);
+pr2 = unaryPotentialColors(tmpl_warped_color, im_obj_region_color);
 
-% Compute diff
-diff = sqrt((gm1 - gm2).^2 + (gd1 - gd2).^2);
-diff = mat2gray(diff);
-
-% ignore places where the gradients were low, they give us little info even
-% if the diff was small.
-diff(gm1<.01 | gm2<.01) = 1;
-
-% propability that a pixel in the 'unknown' region actually does belong to
-% the object.
+% pr is the final unary potential.
+% In this case it's the propability that a pixel in the 'unknown'
+% region actually does belong to the object.
 pr = ones(size(seeds));
-pr(y_im, x_im) = diff;
+pr(y_im, x_im) = pr1 .* pr2;
 
-% High pr means high probablity of being an object pixel.
-pr = 1 - pr;
 % Add a small value to pr to prevent having zero probability
 pr = pr + exp(-maxPairwise);
 pr(pr >= 1) = 1 - exp(-maxPairwise);
@@ -88,24 +86,25 @@ bkg_cost(seeds == 2) = maxPairwise; % known pbject pixels - high cost
 bkg_cost(seeds == 0) = 0; % known background pixels - zero cost
 bkg_cost(seeds == 1) = -log(1 - pr(seeds==1)) * lambda; % unknown, use probablity. High pr should be high cost.
 
-
 % data_cost(r,c,l) equals the cost for assigning label l to pixel at (r,c).
 data_cost(:,:,1) = obj_cost;
 data_cost(:,:,2) = bkg_cost;
 
 %% Initial labels
+%
 % label all object seeds with '0' (the object's label).
 
 init_labels = ones(nrow, ncol);
 init_labels(seeds == 2) = 0;
 
-%% Applying GC
+%% Applying Graph Cuts
+%
+%
+smoothness_cost = 0.1 * (ones(2)-eye(2));
 
-smoothness_cost = 0.22 * (ones(2)-eye(2));
-
-tic;[gch] = GraphCut('open', data_cost, smoothness_cost, vC, hC);toc;
-tic;[gch] = GraphCut('set', gch, init_labels);toc;
-tic;[gch, labels] = GraphCut('expand', gch, 200);toc;
+[gch] = GraphCut('open', data_cost, smoothness_cost, vC, hC);
+[gch] = GraphCut('set', gch, init_labels);
+[gch, labels] = GraphCut('expand', gch, 200);
 GraphCut('close', gch);
 
 %% Close holes to smooth out the label image
@@ -114,21 +113,48 @@ labels = 1-labels;
 labels = imclose(labels, strel('disk', 5, 4));
 labels = imfill(labels,'holes');
 
-labels = 1-labels;
-figure;imagesc(labels);
-
 end
 
-function p = unaryPotential(seeds, type)
-if (strcmpi(type,'obj'))
-    pr = 1 * (seeds == 2) + 0.9 * (seeds == 1) + 1e-9 * (seeds == 0);
-else
-    pr = 1 * (seeds == 0) + 0.1 * (seeds == 1) + 1e-9 * (seeds == 2);
-end
-p = -log(pr);
+%% Energy (Potential) functions
+
+function pr = unaryPotentialGradients(template_region, image_region)
+
+% Compute gradients to get more 'important' regions
+[gm1,gd1] = imgradient(template_region);
+[gm2,gd2] = imgradient(image_region);
+
+% Spead out the energy since the images are probably not exactly aligned
+gfilt = fspecial('gauss', [13 13], sqrt(13));
+gm1 = imfilter(gm1, gfilt);
+gm2 = imfilter(gm2, gfilt);
+
+% Compute diff
+diff = sqrt((gm1 - gm2).^2 + (gd1 - gd2).^2);
+diff = mat2gray(diff);
+
+% ignore places where the gradients were low, they give us little info even
+% if the diff was small.
+diff(gm1<.01 | gm2<.01) = 1;
+
+% High pr means high probablity of being an object pixel.
+pr = 1 - diff;
 end
 
-function [vC, hC] = pairwisePotential(im)   
+function pr = unaryPotentialColors(template_region, image_region)
+
+% Compute the differences in the color planes
+diff_r = template_region(:,:,1) - image_region(:,:,1);
+diff_g = template_region(:,:,2) - image_region(:,:,2);
+diff_b = template_region(:,:,3) - image_region(:,:,3);
+
+diff = sqrt( diff_r.^2 + diff_g.^2 + diff_b.^2 );
+diff = mat2gray(diff);
+
+% High pr means high probablity of being an object pixel.
+pr = 1 - diff;
+end
+
+function [vC, hC] = pairwisePotential(im)
 g = fspecial('gauss', [13 13], sqrt(13));
 dy = fspecial('sobel');
 vf = conv2(g, dy, 'valid');
