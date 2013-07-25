@@ -101,7 +101,7 @@ classdef ImageSet
             
             % Compute homogeneous xy-coordinates of the corner pixels in the template
             [nrow, ncol,~] = size(set.cTemplate);
-            templateHCoords = [0 0 1; ncol 0 1; ncol nrow 1; 0 nrow 1]'; % flip columns/rows because it's an image...
+            templateHCoords = [0 0; ncol 0; ncol nrow; 0 nrow]; % flip columns/rows because it's an image...
             
             % Loop over all images, find object and apply segmentation
             templateKeypoints = [];     % template keypoints and descriptors will be cached
@@ -114,7 +114,8 @@ classdef ImageSet
                 % and a transformation from template image coordinate to test image coordinates.
                 [objectPoints, tform, templateKeypoints, templateDescriptors] = ...
                     findTemplate(set.gTemplate, set.gImages{i}, ...
-                    templateKeypoints, templateDescriptors, 'maxclusters',9,'matchthresh',0.9,'transformtype','affine');
+                                 templateKeypoints, templateDescriptors, ...
+                                 'transformtype','homography');
                 
                 if (size(objectPoints,2) < 10)
                     fprintf(2,' object not found, skipping.');
@@ -126,13 +127,13 @@ classdef ImageSet
                 
                 % Compute the corner's xy-coordinates in the test image
                 % of the region that might belong to the object.
-                objectBounds = tform * templateHCoords; % [x1 y1 w1; x2 y2 w2 ...]'
-                objectBounds = hnormalise(objectBounds); % [x1 y1 1; x2 y2 1 ...]'
+                objectBounds = tform.transformPointsForward(templateHCoords)';
                 
                 % Create an approximate labeling - all pixels in the object
                 % region will be labeled '1', the rest '0'.
-                approximateLabels = poly2mask(objectBounds(1,:), objectBounds(2,:), ...
-                    size(set.gImages{i},1), size(set.gImages{i},2));
+                approximateLabels = ...
+                    poly2mask(objectBounds(1,:), objectBounds(2,:), ...
+                              size(set.gImages{i},1), size(set.gImages{i},2));
                 approximateLabels = uint8(approximateLabels);
                 
                 % Now label all the keypoints that are on the object with '2'.
@@ -140,7 +141,7 @@ classdef ImageSet
                 approximateLabels(objectInd) = 2;
  
                 % Use GraphCut to compute the exact labels from the approximate labels
-                objectLabel = labelTemplate(set.cTemplate, set.cImages{i}, affine2d(tform'), approximateLabels);
+                objectLabel = labelTemplate(set.cTemplate, set.cImages{i}, tform, approximateLabels);
                 labelSet{1,i} = objectLabel;
                 fprintf(1,' done (%.3fs).', toc);
                              
@@ -149,7 +150,7 @@ classdef ImageSet
                     figure;
                     subplot_tight(2,2,1);
                     subimage(set.cImages{i}); axis off;
-                    patch(objectBounds(1,:), objectBounds(2,:),ones(1,4),'EdgeColor','r','FaceColor','none');
+                    patch(objectBounds(1,:), objectBounds(2,:),ones(1,3),'EdgeColor','r','FaceColor','none');
                     
                     subplot_tight(2,2,2);
                     subimage(mat2gray(approximateLabels)); axis off;

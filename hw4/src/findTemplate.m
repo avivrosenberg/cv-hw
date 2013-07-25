@@ -37,6 +37,12 @@ else if(size(parser.Results.kp_tmpl,2) ~= size(parser.Results.desc_tmpl,2))
      end
 end
 
+if (strcmpi(parser.Results.transformtype, 'affine'))
+    fitFunc = @(pts1,pts2) transformationMatches(pts1, pts2, 'TransformType', 'affine');
+else
+    fitFunc = @(pts1,pts2) ransacfithomography(pts1, pts2, .05);
+end
+
 featFunc = @(im) sift(im);
 
 %% Features calculation
@@ -92,7 +98,12 @@ pts1 = kp_tmpl(1:2,matches(1,:));
 pts2 = kp_test (1:2,matches(2,:));
 
 % Find image transform from keypoint locations in both images.
-[tform, inliers, ~] = transformationMatches(pts1, pts2, 'TransformType', parser.Results.transformtype);
+[tform, inliers] = fitFunc(pts1, pts2);
+if (strcmpi(parser.Results.transformtype, 'affine'))
+    tform = affine2d(tform');
+else
+    tform = projective2d(tform');
+end
     
 % use transform's inliers to filter matches even further.
 % matches will now contain the keypoint indicies of keypoints which votes
