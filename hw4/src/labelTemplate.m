@@ -15,8 +15,9 @@ function [ labels ] = labelTemplate( tmpl_im, im, tform, seeds )
 %% Preprocessing
 %
 
-tmpl_im = im2double(tmpl_im);
-im = im2double(im);
+tmpl_im = rgb2gray( im2double(tmpl_im) );
+im = rgb2gray( im2double(im) );
+
 
 %% Set up the cost matrix for each edge (Boundary properties/Pairwise potentials)
 %
@@ -32,17 +33,33 @@ maxPairwise = 1   + max(max(vC + hC));
 % warp template into image coordinates
 tmpl_warped = imwarp(tmpl_im, tform);
 [x0_im, y0_im] = tform.transformPointsForward(1,1);
-x_im = ceil(x0_im):(x0_im+size(tmpl_warped,2));
-y_im = ceil(y0_im):(y0_im+size(tmpl_warped,1));
+x_im = max( ceil(x0_im),1 ) : min( (x0_im+size(tmpl_warped,2)), size(im,2) );
+y_im = max( ceil(y0_im),1 ) : min( (y0_im+size(tmpl_warped,1)), size(im,1) );
 % get the region in the image that should contain the object
 im_obj_region = im(y_im,x_im,:);
 
-% Average-out the regions and compute the pixelwise difference
-filt = fspecial('gaussian', 3, 1.5);
-tmpl_warped = imfilter(tmpl_warped, filt);
-im_obj_region = imfilter(im_obj_region, filt);
-diff = sqrt( (tmpl_warped - im_obj_region).^2 );
-diff = mat2gray(rgb2gray(diff)); % mat2gray used to strech values into [0,1]
+% crop the warped template to the same size as the image region
+% do it such that it's center will remain in the center
+yxdiff = size(tmpl_warped) - size(im_obj_region);
+yxdiff = [floor(yxdiff./2); ceil(yxdiff./2)];
+tmpl_warped = tmpl_warped((1+yxdiff(1,1)):(end-yxdiff(2,1)), (1+yxdiff(1,2)):(end-yxdiff(2,2)));
+
+% Compute gradients to get more 'important' regions
+[gm1,gd1] = imgradient(tmpl_warped);
+[gm2,gd2] = imgradient(im_obj_region);
+
+% Spead out the energy since the images are probably not exactly aligned
+gfilt = fspecial('gauss', [13 13], sqrt(13));
+gm1 = imfilter(gm1, gfilt);
+gm2 = imfilter(gm2, gfilt);
+
+% Compute diff
+diff = sqrt((gm1 - gm2).^2 + (gd1 - gd2).^2);
+diff = mat2gray(diff);
+
+% ignore places where the gradients were low, they give us little info even
+% if the diff was small.
+diff(gm1<.01 | gm2<.01) = 1;
 
 % propability that a pixel in the 'unknown' region actually does belong to
 % the object.
@@ -88,8 +105,16 @@ smoothness_cost = 0.22 * (ones(2)-eye(2));
 
 tic;[gch] = GraphCut('open', data_cost, smoothness_cost, vC, hC);toc;
 tic;[gch] = GraphCut('set', gch, init_labels);toc;
-tic;[gch, labels] = GraphCut('swap', gch);toc;
+tic;[gch, labels] = GraphCut('expand', gch, 200);toc;
 GraphCut('close', gch);
+
+%% Close holes to smooth out the label image
+
+labels = 1-labels;
+labels = imclose(labels, strel('disk', 5, 4));
+labels = imfill(labels,'holes');
+
+labels = 1-labels;
 figure;imagesc(labels);
 
 end
