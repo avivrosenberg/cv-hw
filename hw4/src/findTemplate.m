@@ -93,17 +93,25 @@ pts2 = kp_test (1:2,matches(2,:));
 
 % Find image transform from keypoint locations in both images.
 [tform, inliers, ~] = transformationMatches(pts1, pts2, 'TransformType', parser.Results.transformtype);
-
+    
 % use transform's inliers to filter matches even further.
 % matches will now contain the keypoint indicies of keypoints which votes
-% with the majority on the object center AND ALSO conform with the affine transform. 
-matches = matches(:, inliers);
+% with the majority on the object center AND ALSO conform with the affine transform.
+if (nnz(inliers) > 0)
+    matches = matches(:, inliers);
+    
+    % extract keypoint locations in the test image using the new matches.
+    % these keypoint location are assumed to all be inside the desired object,
+    % and can therefor be use for segmentation of the object.
+    template_points_in_test = kp_test (1:2,matches(2,:));
+    template_points_in_test = unique(template_points_in_test','rows')';
+else
+    % images can't be matched...
+    template_points_in_test = [];
+    tform = [];
+end
 
-% extract keypoint locations in the test image using the new matches.
-% these keypoint location are assumed to all be inside the desired object,
-% and can therefor be use for segmentation of the object.
-template_points_in_test = kp_test (1:2,matches(2,:));
-template_points_in_test = unique(template_points_in_test','rows')';
+
 %% DEBUG
 
 % only plot debug info if no outputs
