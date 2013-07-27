@@ -88,6 +88,10 @@ classdef ImageSet
             
             parser = inputParser;
             parser.addOptional('idx', 1:set.size, @isvector);
+            parser.addParamValue('RecogThresh', 10, @isscalar);
+            parser.addParamValue('MatchThresh', 0.9, @isscalar);
+            parser.addParamValue('Descriptor', 'sift', @isstr);
+            parser.addParamValue('TransformType', 'homography', @isstr);
             parser.parse(varargin{:});
             
             % disable some warnings
@@ -113,11 +117,13 @@ classdef ImageSet
                 % Find some points in the test image that could belong to the object
                 % and a transformation from template image coordinate to test image coordinates.
                 [objectPoints, tform, templateKeypoints, templateDescriptors] = ...
-                    findTemplate(set.gTemplate, set.gImages{i}, ...
+                    findTemplate(set.cTemplate, set.cImages{i}, ...
                                  templateKeypoints, templateDescriptors, ...
-                                 'transformtype','homography');
+                                 'transformtype', parser.Results.TransformType, ...
+                                 'matchthresh', parser.Results.MatchThresh, ...
+                                 'descriptor', parser.Results.Descriptor);
                 
-                if (size(objectPoints,2) < 10)
+                if (size(objectPoints,2) < parser.Results.RecogThresh)
                     fprintf(2,' object not found, skipping.');
                     labelSet{1,i} = [];
                     continue;
@@ -153,7 +159,7 @@ classdef ImageSet
                     patch(objectBounds(1,:), objectBounds(2,:),ones(1,3),'EdgeColor','r','FaceColor','none');
                     
                     subplot_tight(2,2,2);
-                    subimage(mat2gray(approximateLabels)); axis off;
+                    subimage(mat2gray(imdilate(approximateLabels, strel('disk',2)))); axis off;
                     
                     subplot_tight(2,2,[3 4]);
                     subimage(imfuse(set.cImages{i}, labelSet{i})); axis off; 
