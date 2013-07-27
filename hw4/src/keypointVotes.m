@@ -19,7 +19,7 @@ function [ votes, voting_result ] = keypointVotes( im_tmpl, kp_tmpl, kp_test, va
 
 %% Paramters Parsing
 parser = inputParser;
-parser.addRequired('im_tmpl', @ismatrix);
+parser.addRequired('im_tmpl', @(x) ~isempty(x));
 parser.addRequired('kp_tmpl', @ismatrix);
 parser.addRequired('kp_test', @ismatrix);
 parser.addParamValue('clustertype', 'ward', @(x) strcmp(x,'ward') || strcmp(x,'kmeans'));
@@ -53,7 +53,7 @@ theta_test = kp_test(4,:);
 %% Template image center
 
 % in images, y corresonds to ROW and x to COL.
-[n1, m1] = size(im_tmpl);
+[n1, m1, ~] = size(im_tmpl);
 yC = floor(n1 * 0.5);
 xC = floor(m1 * 0.5);
 
