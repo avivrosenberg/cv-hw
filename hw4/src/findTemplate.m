@@ -18,16 +18,21 @@ if (nargout ~= 0 && nargout ~= 2 && nargout ~= 4)
 end
 
 parser = inputParser;
-parser.addRequired('im_tmpl', @(x) ismatrix(x) && ndims(x) == 2);
-parser.addRequired('im_test', @(x) ismatrix(x) && ndims(x) == 2);
+parser.addRequired('im_tmpl', @(x) ~isempty(x) );
+parser.addRequired('im_test', @(x) ~isempty(x) );
 parser.addOptional('kp_tmpl', [], @(x) ismatrix(x) && (isempty(x) || (ndims(x) == 2 && size(x,1) == 4)));
-parser.addOptional('desc_tmpl', [], @(x) ismatrix(x) && (isempty(x) || (ndims(x) == 2 && size(x,1) == 128)));
+parser.addOptional('desc_tmpl', [], @(x) ismatrix(x) && (isempty(x) || (ndims(x) == 2)));
 parser.addParamValue('clustertype', 'kmeans', @(x) strcmp(x,'ward') || strcmp(x,'kmeans'));
 parser.addParamValue('maxclusters', 7, @isscalar);
 parser.addParamValue('matchthresh', 0.9, @isscalar);
 parser.addParamValue('transformtype', 'affine', @(x) strcmp(x,'affine') || strcmp(x,'homography'));
+parser.addParamValue('descriptor', 'sift', @(x) strcmp(x,'sift') || strcmp(x,'ssift'));
 
 parser.parse(im_tmpl, im_test, varargin{:});
+
+if (ndims(im_tmpl) ~= ndims(im_test))
+    error('Template and Image should have same dementionality.');
+end
 
 calc_tmpl_features = false;
 if (isempty(parser.Results.kp_tmpl) || isempty(parser.Results.desc_tmpl))
@@ -43,7 +48,16 @@ else
     fitFunc = @(pts1,pts2) ransacfithomography(pts1, pts2, .05);
 end
 
-featFunc = @(im) sift(im);
+if (strcmpi(parser.Results.descriptor, 'sift'))
+    featFunc = @(im) sift(im);
+    if (ndims(im_tmpl) == 3 && ndims(im_test) == 3)
+        im_tmpl = rgb2gray(im_tmpl);
+        im_test = rgb2gray(im_test);
+    end
+else
+    featFunc = @(im) ssift(im);
+end
+
 
 %% Features calculation
 % 
@@ -145,5 +159,8 @@ scatter(majority_votes(1,inliers),majority_votes(2,inliers),'go');
 scatter(template_points_in_test(1,:),template_points_in_test(2,:),'m.');
 legend('Majority votes', 'Non-Majority Votes',  'Majority votes of Affine keypoints', 'Actual Keypoints');
 hold off;
+
+figure;
+plotMatches(im_tmpl, im_test, kp_tmpl(1:2,:), kp_test(1:2,:), matches);
 end
 
