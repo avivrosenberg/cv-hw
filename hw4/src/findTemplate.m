@@ -156,11 +156,11 @@ imshow(im_test); hold on;
 scatter(majority_votes(1,:),majority_votes(2,:),'r+');
 scatter(votes(1,~vote_results),votes(2,~vote_results),'yx');
 scatter(majority_votes(1,inliers),majority_votes(2,inliers),'go');
-scatter(template_points_in_test(1,:),template_points_in_test(2,:),'m.');
-legend('Majority votes', 'Non-Majority Votes',  'Majority votes of Affine keypoints', 'Actual Keypoints');
+scatter(template_points_in_test(1,:),template_points_in_test(2,:),'mp');
+legend('Majority votes', 'Non-Majority Votes',['Majority votes of ' parser.Results.transformtype ' keypoints'], 'Actual Keypoints');
 hold off;
 
 figure;
-plotMatches(im_tmpl, im_test, kp_tmpl(1:2,:), kp_test(1:2,:), matches);
+plotmatches(im_tmpl, im_test, kp_tmpl(1:2,:), kp_test(1:2,:), matches);
 end
 
