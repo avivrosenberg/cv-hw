@@ -161,6 +161,6 @@ legend('Majority votes', 'Non-Majority Votes',['Majority votes of ' parser.Resul
 hold off;
 
 figure;
-plotmatches(im_tmpl, im_test, kp_tmpl(1:2,:), kp_test(1:2,:), matches);
+plotmatches(mat2gray(im_tmpl), mat2gray(im_test), kp_tmpl(1:2,:), kp_test(1:2,:), matches);
 end
 
