@@ -10,9 +10,9 @@ function [ keypoints, descriptors ] = ssift( im_color, varargin )
 %% Parameter Parsing
 parser = inputParser;
 parser.addRequired('im_color', @(x) ~isrow(x) && ~iscolumn(x) && ~isscalar(x) && ~isempty(x));
-parser.addParamValue('scaleclusters',5, @isscalar);
+parser.addParamValue('scaleclusters',7, @isscalar);
 parser.addParamValue('patch_size',5, @isscalar);
-parser.addParamValue('desc_rad',40, @isscalar);
+parser.addParamValue('desc_rad',20, @isscalar);
 parser.addParamValue('nrad',3, @isscalar);
 parser.addParamValue('nang',12, @isscalar);
 parser.addParamValue('var_noise',2700, @isscalar);
@@ -104,9 +104,8 @@ end
 % take keypoint locations in the original scale
 keypoints = sift_kp;
 
-% normalize all descriptors to [0,1]
-%descriptors = [mat2gray(sift_desc); mat2gray(ss_desc)];
-descriptors = mat2gray(ss_desc);
+%descriptors = [sift_desc; mat2gray(ss_desc).*max(sift_desc(:))];
+descriptors = ss_desc;
 
 end
 
