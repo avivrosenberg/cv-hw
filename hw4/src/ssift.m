@@ -15,10 +15,10 @@ parser.addParamValue('patch_size',5, @isscalar);
 parser.addParamValue('desc_rad',20, @isscalar);
 parser.addParamValue('nrad',3, @isscalar);
 parser.addParamValue('nang',12, @isscalar);
-parser.addParamValue('var_noise',2700, @isscalar);
-parser.addParamValue('saliency_thresh',1.0, @isscalar);
-parser.addParamValue('homogeneity_thresh',1.0, @isscalar);
-parser.addParamValue('snn_thresh',1.0, @isscalar);
+%parser.addParamValue('var_noise',2700, @isscalar);
+%parser.addParamValue('saliency_thresh',1.0, @isscalar);
+%parser.addParamValue('homogeneity_thresh',1.0, @isscalar);
+%parser.addParamValue('snn_thresh',1.0, @isscalar);
 
 parser.parse(im_color, varargin{:});
 
@@ -28,10 +28,10 @@ params.patch_size = parser.Results.patch_size;
 params.desc_rad = parser.Results.desc_rad;
 params.nrad = parser.Results.nrad;
 params.nang = parser.Results.nang;
-params.var_noise = parser.Results.var_noise;
-params.saliency_thresh = parser.Results.saliency_thresh;
-params.homogeneity_thresh = parser.Results.homogeneity_thresh;
-params.snn_thresh = parser.Results.snn_thresh;
+params.var_noise = 2700;
+params.saliency_thresh = 1.0;
+params.homogeneity_thresh = 1.0;
+params.snn_thresh = 1.0;
 
 %%
 [rows, cols, ~] = size(im_color);
