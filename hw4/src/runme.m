@@ -53,3 +53,8 @@ end
 
 clearvars *_;
 
+%% Example run
+
+starbucksSet.getLabels();
+
+roadsignSet.getLabels();
