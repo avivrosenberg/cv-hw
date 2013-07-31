@@ -168,6 +168,6 @@ for b=1:size(im,3)
     hC = max(hC, abs(imfilter(im(:,:,b), vf', 'symmetric')));
 end
 
-vC = exp(-vC ./ 2 ./ 3^2);
-hC = exp(-hC ./ 2 ./ 3^2);
+vC = exp(-vC ./ 2 ./ 0.15^2);
+hC = exp(-hC ./ 2 ./ 0.15^2);
 end
