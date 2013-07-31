@@ -101,7 +101,7 @@ classdef ImageSet
             warning('off','MATLAB:singularMatrix');
             warning('off','MATLAB:nearlySingularMatrix');
             
-            labelSet = cell(1, set.size);
+            labelSet = cell(2, set.size);
             
             % Compute homogeneous xy-coordinates of the corner pixels in the template
             [nrow, ncol,~] = size(set.cTemplate);
@@ -125,7 +125,7 @@ classdef ImageSet
                 
                 if (size(objectPoints,2) < parser.Results.RecogThresh)
                     fprintf(2,' object not found, skipping.');
-                    labelSet{1,i} = [];
+                    labelSet{1,i} = []; labelSet{2,i} = [];
                     continue;
                 else
                     fprintf(1,' object found (%.3fs). Applying segmentation...', toc); tic;
@@ -150,6 +150,7 @@ classdef ImageSet
                 % Use GraphCut to compute the exact labels from the approximate labels
                 objectLabel = labelTemplate(set.cTemplate, set.cImages{i}, tform, approximateLabels);
                 labelSet{1,i} = objectLabel;
+                labelSet{2,i} = tform;
                 fprintf(1,' done (%.3fs).', toc);
                              
                 % DEBUG
@@ -163,7 +164,7 @@ classdef ImageSet
                     subimage(mat2gray(imdilate(approximateLabels, strel('disk',2)))); axis off;
                     
                     subplot_tight(2,2,[3 4]);
-                    subimage(imfuse(set.cImages{i}, labelSet{i})); axis off;
+                    subimage(imfuse(set.cImages{i}, labelSet{1,i})); axis off;
                     
                     drawnow;
                 end

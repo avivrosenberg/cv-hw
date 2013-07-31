@@ -54,7 +54,38 @@ end
 clearvars *_;
 
 %% Example run
-
+%
 starbucksSet.getLabels();
 
 roadsignSet.getLabels();
+%}
+
+%% Seif 5
+%
+
+res = starbucksSet.getLabels(9);
+fprintf('\n');
+
+label_sb9 = res{1,9};
+tform_sb9 = res{2,9};
+sb9 = starbucksSet.cImages{9};
+
+tform = maketform('projective',tform_sb9.T);
+
+rs_tmpl = roadsignSet.cTemplate;
+rs_tmpl_xformed = ...
+    imtransform(rs_tmpl, tform, 'XData', [1 size(sb9,2)], 'YData' , [1 size(sb9,1)]);
+bg_ind = (rs_tmpl_xformed(:,:,1) >= 240) & (rs_tmpl_xformed(:,:,2) >= 240) & (rs_tmpl_xformed(:,:,3) >= 240);
+bg_ind = repmat(bg_ind, [1 1 3]);
+rs_tmpl_xformed(bg_ind) = 0;
+
+gray_ind = (rs_tmpl_xformed(:,:,1) == rs_tmpl_xformed(:,:,2)) & (rs_tmpl_xformed(:,:,2) == rs_tmpl_xformed(:,:,3));
+gray_ind = repmat(gray_ind, [1 1 3]);
+rs_tmpl_xformed(gray_ind) = 0;
+
+new_im = sb9;
+label_sb9 = logical(repmat(label_sb9, [1 1 3]));
+new_im(label_sb9) = 0;
+
+figure;
+imshowpair(new_im, rs_tmpl_xformed, 'blend');
