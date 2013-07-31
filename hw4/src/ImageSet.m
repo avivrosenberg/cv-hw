@@ -145,7 +145,8 @@ classdef ImageSet
                 % Now label all the keypoints that are on the object with '2'.
                 objectInd = sub2ind(size(approximateLabels), round(objectPoints(2,:)), round(objectPoints(1,:)));
                 approximateLabels(objectInd) = 2;
- 
+
+                
                 % Use GraphCut to compute the exact labels from the approximate labels
                 objectLabel = labelTemplate(set.cTemplate, set.cImages{i}, tform, approximateLabels);
                 labelSet{1,i} = objectLabel;
@@ -156,13 +157,15 @@ classdef ImageSet
                     figure;
                     subplot_tight(2,2,1);
                     subimage(set.cImages{i}); axis off;
-                    patch(objectBounds(1,:), objectBounds(2,:),ones(1,3),'EdgeColor','r','FaceColor','none');
+                    patch(objectBounds(1,:), objectBounds(2,:),ones(1,3),'EdgeColor','r','FaceColor','none', 'LineWidth', 1.5);
                     
                     subplot_tight(2,2,2);
                     subimage(mat2gray(imdilate(approximateLabels, strel('disk',2)))); axis off;
                     
                     subplot_tight(2,2,[3 4]);
-                    subimage(imfuse(set.cImages{i}, labelSet{i})); axis off; 
+                    subimage(imfuse(set.cImages{i}, labelSet{i})); axis off;
+                    
+                    drawnow;
                 end
             end
             
